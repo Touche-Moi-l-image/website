@@ -1,11 +1,9 @@
-from flask import Flask, jsonify, request
+from flask import Flask
+from routes.convert_to_bw import convert_to_bw
 
 app = Flask(__name__)
 
-# Exemple de route API
-@app.route('/hello', methods=['GET'])
-def hello():
-    return jsonify({"message": "Hello, World!"})
+app.register_blueprint(convert_to_bw)
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
