@@ -43,3 +43,32 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 ![Image transformée en noir et blanc](src/img/bw.png)
 
 ---
+
+### 2. Rotation d'une image
+**Route :** `/api/rotate-image`
+
+- **Méthode :** POST
+- **Description :** Fait pivoter une image selon un angle donné (en degrés).
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `angle` : Angle de rotation en degrés (positif pour horaire, négatif pour antihoraire).
+
+**Exemple d'image avant et après transformation :**
+
+![Image pivotée](src/img/rotated_image.png)
+---
+
+### 3. Effet miroir sur une image
+**Route :** `/api/flip-image`
+
+- **Méthode :** POST
+- **Description :** Applique un effet miroir horizontal ou vertical à une image.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `direction` : `H` pour un miroir horizontal, `V` pour un miroir vertical.
+
+**Exemple d'image avant et après transformation :**
+
+![Image avec effet miroir](src/img/flipped_image.png)
+
+---
