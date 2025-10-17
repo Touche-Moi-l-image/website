@@ -28,7 +28,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 
 **image d'origine :**
 
-![Image d'origine](src/img/examples/base.png)
+![Image d'origine](src/img/base.png)
 
 ### 1. Transformation en noir et blanc
 **Route :** `/api/convert-to-bw`
@@ -40,6 +40,6 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 
 **Exemple d'image avant et après transformation :**
 
-![Image transformée en noir et blanc](src/img/examples/bw.png)
+![Image transformée en noir et blanc](src/img/bw.png)
 
 ---
