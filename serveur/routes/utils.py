@@ -7,15 +7,27 @@ import os
 def process_image(image_source, transform_function):
     try:
         print("Image source received:", image_source)
-        print("Resolved path:", os.path.abspath(image_source))
+        
+        # Convertir les chemins relatifs en chemins absolus
+        if not (image_source.startswith('http://') or image_source.startswith('https://')):
+            image_source = os.path.abspath(image_source)
+            print("Resolved absolute path:", image_source)
+        
         if image_source.startswith('http://') or image_source.startswith('https://'):
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
             response = requests.get(image_source, headers=headers)
             response.raise_for_status()
             image = Image.open(io.BytesIO(response.content))
         else:
-            with open(image_source, 'rb') as f:
-                image = Image.open(f)
+            try:
+                with open(image_source, 'rb') as f:
+                    image = Image.open(f)
+            except FileNotFoundError:
+                print("FileNotFoundError: The file does not exist at path:", image_source)
+                raise
+            except Exception as e:
+                print("Error while opening the file:", str(e))
+                raise
 
         image.load()
 

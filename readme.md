@@ -43,3 +43,17 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 ![Image transformée en noir et blanc](src/img/bw.png)
 
 ---
+
+### 2. Rotation d'une image
+**Route :** `/api/rotate-image`
+
+- **Méthode :** POST
+- **Description :** Fait pivoter une image selon un angle donné (en degrés).
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `angle` : Angle de rotation en degrés (positif pour horaire, négatif pour antihoraire).
+
+**Exemple d'image avant et après transformation :**
+
+![Image pivotée](src/img/rotated_image.png)
+---
