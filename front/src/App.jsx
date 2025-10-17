@@ -1,5 +1,6 @@
 import './App.css';
 import useImageEditor from '../hooks/useImageEditor';
+import Sidebar from './components/sidebar.jsx';
 import { useState } from 'react';
 
 function App() {
@@ -20,8 +21,11 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <h1>Touche Moi l'Image 🎨</h1>
+    <div className="layout">
+      <Sidebar />
+      <div className="main-content">
+        <div className="app">
+      <h1>Touche Moi l'Image</h1>
 
       {/* --- Upload Section --- */}
       <div className="upload-section">
@@ -57,6 +61,8 @@ function App() {
           />
         </div>
       )}
+    </div>
+      </div>
     </div>
   );
 }

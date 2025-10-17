@@ -1,10 +1,13 @@
+html,
+body,
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #1e1e1e;
+  overflow: hidden;
 }
-
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -33,25 +36,14 @@
   }
 }
 
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
-}
-
-
 .app {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 2rem;
   font-family: 'Poppins', sans-serif;
   color: #fff;
   background-color: #1e1e1e;
   min-height: 100vh;
-  padding: 2rem;
 }
 
 .upload-section {
@@ -63,7 +55,7 @@
 .upload-btn,
 .change-btn,
 .edit-btn {
-  background-color: #4a90e2;
+  background-color: #ffcd3c;
   border: none;
   padding: 10px 20px;
   border-radius: 8px;
@@ -83,6 +75,113 @@
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(255,255,255,0.2);
   transition: all 0.3s ease;
+  max-width: 80%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+.layout {
+  display: flex;
+  height: 100vh;
+  background-color: #1e1e1e;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+}
+
+
+/* ----- SIDEBAR ----- */
+.sidebar {
+  width: 10vw; /* ≈10% de l’écran */
+  min-width: 120px;
+  background-color: #ffcd3c; /* fond jaune */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; /* logo en haut, paramètres en bas */
+  border-right: 2px solid #333;
+  padding: 1rem 0;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+
+.sidebar-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sidebar-logo img {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-logo h2 {
+  font-size: 0.9rem;
+  color: #000;
+  font-weight: bold;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 0;
+}
+
+.sidebar-nav button {
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+
+.sidebar-nav button:hover {
+  background-color: #fff;
+  color: #000;
+}
+
+.sidebar-footer {
+  margin-bottom: 1rem;
+}
+
+.sidebar-footer button {
+  background: none;
+  border: none;
+  color: #000;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.sidebar-footer button:hover {
+  color: #fff;
+}
+
+/* ----- MAIN CONTENT ----- */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  text-align: center;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 
