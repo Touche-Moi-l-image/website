@@ -106,3 +106,23 @@ curl -X POST -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base
 
 ![Image redimensionnée](src/img/resized_image.png)
 ---
+
+### 6. Contraste d'une image
+**Route :** `/api/contrast-image`
+
+- **Méthode :** POST
+- **Description :** Ajuste le contraste d'une image selon un pourcentage.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `percent` : Pourcentage de contraste (100 = image originale). Units: percent (%). Accepte nombre ou chaîne avec '%' (ex. 150 ou '150%').
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=src/img/base.png" -F "percent=150" http://127.0.0.1:5000/api/contrast-image --output contrast.png
+```
+
+**Exemple d'image après transformation :**
+
+![Image avec contraste ajusté](src/img/contrasted_image.png)
+---
