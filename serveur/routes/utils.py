@@ -3,6 +3,7 @@ from PIL import Image
 import io
 import requests
 import os
+import traceback
 
 def process_image(image_source, transform_function):
     try:
@@ -31,10 +32,24 @@ def process_image(image_source, transform_function):
 
         image.load()
 
-        transformed_image = transform_function(image)
+        try:
+            transformed_image = transform_function(image)
+        except Exception as e:
+            print("Error during image transformation:", str(e))
+            traceback.print_exc()
+            raise
+
+        if not isinstance(transformed_image, Image.Image):
+            print("Transformed object is not a PIL Image, got:", type(transformed_image))
+            raise TypeError("Transformation function did not return a PIL Image")
 
         img_byte_arr = io.BytesIO()
-        transformed_image.save(img_byte_arr, format='PNG')
+        try:
+            transformed_image.save(img_byte_arr, format='PNG')
+        except Exception as e:
+            print("Error saving transformed image to bytes:", str(e))
+            traceback.print_exc()
+            raise
         img_byte_arr.seek(0)
         return send_file(img_byte_arr, mimetype='image/png')
 
