@@ -41,7 +41,7 @@ if [[ -f "requirements.txt" ]]; then
     pip install -r requirements.txt
 fi
 
-
+export DEV=1
 python3 server.py &
 BACK_PID=$!
 
