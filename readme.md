@@ -72,3 +72,18 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 ![Image avec effet miroir](src/img/flipped_image.png)
 
 ---
+
+### 4. Floutage d'une image
+**Route :** `/api/blur-image`
+
+- **Méthode :** POST
+- **Description :** Applique un flou gaussien à une image selon un pourcentage donné.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `percent` : Pourcentage de floutage (0-100). Valeur par défaut : 50.
+
+**Exemple d'image avant et après transformation :**
+
+![Image floutée](src/img/blured_image.png)
+
+---
