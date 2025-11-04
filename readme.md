@@ -87,3 +87,22 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 ![Image floutée](src/img/blured_image.png)
 
 ---
+
+### 5. Redimensionnement d'une image
+**Route :** `/api/resize-image`
+
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `x_percent` : Pourcentage de la largeur (par ex. 50 pour 50%).
+  - `y_percent` : Pourcentage de la hauteur (par ex. 50 pour 50%).
+  - Units: percentages (%) accepted as number or string with '%' suffix (e.g. 80 or '80%').
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" -F "x_percent=50" -F "y_percent=120" http://127.0.0.1:5000/api/resize-image --output resized_image.png 
+```
+
+**Exemple d'image avant et après transformation :**
+
+![Image redimensionnée](src/img/resized_image.png)
+---
