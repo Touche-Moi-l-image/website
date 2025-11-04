@@ -126,3 +126,24 @@ curl -X POST -F "image_source=src/img/base.png" -F "percent=150" http://127.0.0.
 
 ![Image avec contraste ajusté](src/img/contrasted_image.png)
 ---
+
+### 7. Luminosité d'une image
+**Route :** `/api/brightness-image`
+
+- **Méthode :** POST
+- **Description :** Ajuste la luminosité d'une image selon un pourcentage.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `percent` : Pourcentage de luminosité (100 = image originale). Units: percent (%). Accepte nombre ou chaîne avec '%' (ex. 120 ou '120%').
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=src/img/base.png" -F "percent=120" http://127.0.0.1:5000/api/brightness-image --output brightness.png
+```
+
+**Exemple d'image avant et après transformation :**
+
+![Image avec luminosité ajustée](src/img/brightened_image.png)
+
+---
