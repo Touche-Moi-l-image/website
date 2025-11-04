@@ -15,5 +15,5 @@ app.register_blueprint(blur_image)
 app.register_blueprint(resize_image)
 
 if __name__ == '__main__':
-    dev_mode = os.getenv('DEV','').lower in ['1','true','yes']
+    dev_mode = os.getenv('DEV','') == '1'
     app.run(host='127.0.0.1', port=5000, debug=dev_mode)
