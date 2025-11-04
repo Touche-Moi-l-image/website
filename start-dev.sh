@@ -12,7 +12,7 @@ echo -e "${BLUE}🚀 Démarrage du projet en mode développement...${NC}\n"
 cleanup() {
     echo -e "\n${RED}🛑 Arrêt des serveurs...${NC}"
     kill $(jobs -p) 2>/dev/null
-    exit
+    return 0
 }
 
 trap cleanup SIGINT SIGTERM
@@ -31,15 +31,16 @@ echo -e "${GREEN}🐍 Lancement du serveur back...${NC}"
 cd serveur
 
 # Vérifier si un environnement virtuel existe, sinon utiliser Python global
-if [ -d "venv" ]; then
+if [[ -d "venv" ]]; then
     source venv/bin/activate
     echo -e "${BLUE}Environnement virtuel activé${NC}"
 fi
 
 # Installer les dépendances si requirements.txt existe
-if [ -f "requirements.txt" ]; then
+if [[ -f "requirements.txt" ]]; then
     pip install -r requirements.txt
 fi
+
 
 python3 server.py &
 BACK_PID=$!
