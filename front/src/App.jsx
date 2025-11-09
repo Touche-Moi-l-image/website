@@ -1,21 +1,113 @@
 import './App.css';
 import useImageEditor from '../hooks/useImageEditor';
 import Sidebar from './components/sidebar.jsx';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import api from './services/apiService.js';
 
 function App() {
   const { state, actions } = useImageEditor();
   const [editingStarted, setEditingStarted] = useState(false);
+  const [loadingButton, setLoadingButton] = useState(null); // 'bw', 'flipH', 'flipV' ou null
+  const lastObjectUrlRef = useRef(null);
 
+  //Convertit l'image actuelle en noir et blanc via l'API
+  const handleConvertToBW = async (imageSource) => {
+    setLoadingButton('bw');
+    try {
+      // Appel API
+      const blob = await api.convertToBW(imageSource);
+      const url = URL.createObjectURL(blob);
+      if (lastObjectUrlRef.current) {
+        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
+      }
+      lastObjectUrlRef.current = url;
+      // On affiche la nouvelle image dans l’éditeur
+      actions.setCurrentPicture(url);
+    } catch (err) {
+      console.error('Erreur conversion N&B (serveur) :', err);
+
+      // Fallback côté client si l'API échoue
+      try {
+        const localDataUrl = await convertToBWClient(imageSource); // méthode locale
+        if (lastObjectUrlRef.current) {
+          try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
+          lastObjectUrlRef.current = null;
+        }
+        actions.setCurrentPicture(localDataUrl);
+      } catch (e) {
+        console.error('Fallback conversion N&B échoué :', e);
+      }
+    } finally {
+      setLoadingButton(null);
+    }
+  };
+//Flip (miroir) de l'image
+  const handleFlip = async (direction) => {
+    const key = direction === 'H' ? 'flipH' : 'flipV';
+    setLoadingButton(key);
+    try {
+      const blob = await api.flipImage(state.currentPicture, direction);
+      const url = URL.createObjectURL(blob);
+      if (lastObjectUrlRef.current) {
+        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
+      }
+      lastObjectUrlRef.current = url;
+      actions.setCurrentPicture(url);
+    } catch (err) {
+      console.error('Erreur flip image:', err);
+      try {
+        const local = await flipClient(state.currentPicture, direction);
+        actions.setCurrentPicture(local);
+      } catch (e) {
+        console.error('Fallback flip échoué:', e);
+      }
+    } finally {
+      setLoadingButton(null);
+    }
+  };
+
+
+//Flip côté clien
+  const flipClient = (imageSource, direction) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.save();
+        if (direction === 'H') {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        } else {
+          ctx.translate(0, canvas.height);
+          ctx.scale(1, -1);
+        }
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => reject(new Error('Image load failed for client flip'));
+      img.src = imageSource;
+    });
+  };
+
+  
+//Gestion de l'upload de l'image par l'utilisateur
   const handleUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
+      if (lastObjectUrlRef.current) {
+        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
+        lastObjectUrlRef.current = null;
+      }
       actions.setOriginalPicture(reader.result);
       actions.setCurrentPicture(reader.result);
-      setEditingStarted(false); // reset si on change d’image
+      setEditingStarted(false);
     };
     reader.readAsDataURL(file);
   };
@@ -25,43 +117,78 @@ function App() {
       <Sidebar />
       <div className="main-content">
         <div className="app">
-      <h1>Touche Moi l'Image</h1>
+          <h1>Touche Moi l'Image</h1>
 
-      {/* --- Upload Section --- */}
-      <div className="upload-section">
-        {!state.currentPicture && (
-          <label className="upload-btn">
-            Sélectionner une image {' '}
-            <input type="file" accept="image/*" onChange={handleUpload} hidden />
-          </label>
-        )}
+          <div className="upload-section">
+            {!state.currentPicture && (
+              <label className="upload-btn">
+                Sélectionner une image{' '}
+                <input type="file" accept="image/*" onChange={handleUpload} hidden />
+              </label>
+            )}
 
-        {state.currentPicture && !editingStarted && (
-          <>
-            <label className="change-btn">
-              Changer d'image {' '}
-              <input type="file" accept="image/*" onChange={handleUpload} hidden />
-            </label>
-            <button
-              className="edit-btn"
-              onClick={() => setEditingStarted(true)}
-            >
-              Commencer à modifier
-            </button>
-          </>
-        )}
-      </div>
+            {state.currentPicture && !editingStarted && (
+              <>
+                <label className="change-btn">
+                  Changer d'image{' '}
+                  <input type="file" accept="image/*" onChange={handleUpload} hidden />
+                </label>
+                <button className="edit-btn" onClick={() => setEditingStarted(true)}>
+                  Commencer à modifier
+                </button>
+              </>
+            )}
+          </div>
 
-      {/* --- Preview Section --- */}
-      {state.currentPicture && (
-        <div className="preview">
-          <img
-            src={state.currentPicture}
-            alt="Prévisualisation"
-          />
+          {state.currentPicture && (
+            <div className="preview">
+              <img src={state.currentPicture} alt="Prévisualisation" />
+            </div>
+          )}
+
+          {state.currentPicture && editingStarted && (
+            <div className="editor-controls">
+              <button
+                className="convert-btn"
+                onClick={() => handleConvertToBW(state.currentPicture)}
+                disabled={loadingButton !== null}
+              >
+                {loadingButton === 'bw' ? 'Traitement...' : 'Convertir en N&B'}
+              </button>
+
+              <button
+                className="flip-h-btn"
+                onClick={() => handleFlip('H')}
+                disabled={loadingButton !== null}
+              >
+                {loadingButton === 'flipH' ? 'Traitement...' : 'Flip Horizontal'}
+              </button>
+
+              <button
+                className="flip-v-btn"
+                onClick={() => handleFlip('V')}
+                disabled={loadingButton !== null}
+              >
+                {loadingButton === 'flipV' ? 'Traitement...' : 'Flip Vertical'}
+              </button>
+
+              <button
+                className="cancel-edit-btn"
+                onClick={() => {
+                  if (state.originalPicture) actions.setCurrentPicture(state.originalPicture);
+                  if (lastObjectUrlRef.current) {
+                    try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
+                    lastObjectUrlRef.current = null;
+                  }
+                  setEditingStarted(false);
+                }}
+                disabled={loadingButton !== null}
+              >
+                Annuler
+              </button>
+            </div>
+          )}
         </div>
-      )}
-    </div>
       </div>
     </div>
   );
