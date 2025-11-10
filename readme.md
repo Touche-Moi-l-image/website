@@ -147,3 +147,30 @@ curl -X POST -F "image_source=src/img/base.png" -F "percent=120" http://127.0.0.
 ![Image avec luminosité ajustée](src/img/brightened_image.png)
 
 ---
+
+### 8. Rognage d'une image (crop)
+**Route :** `/api/crop-image`
+
+- **Méthode :** POST
+- **Description :** Rogne l'image depuis les côtés sélectionnés vers le centre. Chaque côté est spécifié par un nombre entier de pixels à enlever.
+- **Paramètres (form-data) :**
+  - `image_source` : URL ou chemin local de l'image à transformer. (requis)
+  - `crop_left` : nombre de pixels à rogner depuis le côté gauche (ex. `10` ou `10px`). Mettre `0` ou omettre pour ne pas rogner.
+  - `crop_right` : nombre de pixels à rogner depuis le côté droit.
+  - `crop_top` : nombre de pixels à rogner depuis le haut.
+  - `crop_bottom` : nombre de pixels à rogner depuis le bas.
+
+**Comportement :**
+- Si plusieurs côtés sont sélectionnés, chacun retire la distance donnée vers le centre. Les valeurs sont prises en pixels directement. Si les paramètres conduisent à une image de taille nulle ou négative, la requête échoue avec une erreur.
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST \
+  -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" \
+  -F "crop_left=10" \
+  -F "crop_right=0" \
+  -F "crop_top=5" \
+  -F "crop_bottom=0" \
+  http://127.0.0.1:5000/api/crop-image --output cropped_image.png
+```
