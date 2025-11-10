@@ -142,7 +142,7 @@ curl -X POST -F "image_source=src/img/base.png" -F "percent=150" http://127.0.0.
 curl -X POST -F "image_source=src/img/base.png" -F "percent=120" http://127.0.0.1:5000/api/brightness-image --output brightness.png
 ```
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image avec luminosité ajustée](src/img/brightened_image.png)
 
@@ -167,10 +167,14 @@ curl -X POST -F "image_source=src/img/base.png" -F "percent=120" http://127.0.0.
 
 ```bash
 curl -X POST \
-  -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" \
+  -F "image_source=src/img/base.png" \
   -F "crop_left=10" \
   -F "crop_right=0" \
   -F "crop_top=5" \
   -F "crop_bottom=0" \
   http://127.0.0.1:5000/api/crop-image --output cropped_image.png
 ```
+
+**Exemple d'image après transformation :**
+
+![Image rognée](src/img/croped_image.png)
