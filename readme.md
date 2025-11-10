@@ -38,7 +38,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 - **Paramètres :**
   - `image_source` : URL ou chemin local de l'image à transformer.
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image transformée en noir et blanc](src/img/bw.png)
 
@@ -53,7 +53,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
   - `image_source` : URL ou chemin local de l'image à transformer.
   - `angle` : Angle de rotation en degrés (positif pour horaire, négatif pour antihoraire).
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image pivotée](src/img/rotated_image.png)
 ---
@@ -67,7 +67,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
   - `image_source` : URL ou chemin local de l'image à transformer.
   - `direction` : `H` pour un miroir horizontal, `V` pour un miroir vertical.
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image avec effet miroir](src/img/flipped_image.png)
 
@@ -82,7 +82,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
   - `image_source` : URL ou chemin local de l'image à transformer.
   - `percent` : Pourcentage de floutage (0-100). Valeur par défaut : 50.
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image floutée](src/img/blured_image.png)
 
@@ -102,7 +102,48 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 curl -X POST -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" -F "x_percent=50" -F "y_percent=120" http://127.0.0.1:5000/api/resize-image --output resized_image.png 
 ```
 
-**Exemple d'image avant et après transformation :**
+**Exemple d'image après transformation :**
 
 ![Image redimensionnée](src/img/resized_image.png)
+---
+
+### 6. Contraste d'une image
+**Route :** `/api/contrast-image`
+
+- **Méthode :** POST
+- **Description :** Ajuste le contraste d'une image selon un pourcentage.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `percent` : Pourcentage de contraste (100 = image originale). Units: percent (%). Accepte nombre ou chaîne avec '%' (ex. 150 ou '150%').
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=src/img/base.png" -F "percent=150" http://127.0.0.1:5000/api/contrast-image --output contrast.png
+```
+
+**Exemple d'image après transformation :**
+
+![Image avec contraste ajusté](src/img/contrasted_image.png)
+---
+
+### 7. Luminosité d'une image
+**Route :** `/api/brightness-image`
+
+- **Méthode :** POST
+- **Description :** Ajuste la luminosité d'une image selon un pourcentage.
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `percent` : Pourcentage de luminosité (100 = image originale). Units: percent (%). Accepte nombre ou chaîne avec '%' (ex. 120 ou '120%').
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=src/img/base.png" -F "percent=120" http://127.0.0.1:5000/api/brightness-image --output brightness.png
+```
+
+**Exemple d'image avant et après transformation :**
+
+![Image avec luminosité ajustée](src/img/brightened_image.png)
+
 ---
