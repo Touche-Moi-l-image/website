@@ -13,11 +13,7 @@ async function postForm(route, fields = {}) {
 
   const res = await fetch(url, {
     method: 'POST',
-    body: form ,
-    headers: {
-        // Ne pas définir 'Content-Type', le navigateur le fait automatiquement pour FormData
-      'Access-Control-Allow-Origin': '*',
-    }
+    body: form
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
