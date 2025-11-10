@@ -19,7 +19,12 @@ async function postForm(route, fields = {}) {
     const text = await res.text().catch(() => '');
     throw new Error(`API ${route} failed (${res.status}): ${text}`);
   }
-  return res.blob();
+  const blob = await res.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onload = () => resolve(reader.result);
+  })
 }
 
 export default {
