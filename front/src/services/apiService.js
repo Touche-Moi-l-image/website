@@ -11,7 +11,14 @@ async function postForm(route, fields = {}) {
     if (v !== undefined && v !== null) form.append(k, v);
   });
 
-  const res = await fetch(url, { method: 'POST', body: form });
+  const res = await fetch(url, {
+    method: 'POST',
+    body: form ,
+    headers: {
+        // Ne pas définir 'Content-Type', le navigateur le fait automatiquement pour FormData
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`API ${route} failed (${res.status}): ${text}`);

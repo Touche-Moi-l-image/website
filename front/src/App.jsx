@@ -26,17 +26,6 @@ function App() {
     } catch (err) {
       console.error('Erreur conversion N&B (serveur) :', err);
 
-      // Fallback côté client si l'API échoue
-      try {
-        const localDataUrl = await convertToBWClient(imageSource); // méthode locale
-        if (lastObjectUrlRef.current) {
-          try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
-          lastObjectUrlRef.current = null;
-        }
-        actions.setCurrentPicture(localDataUrl);
-      } catch (e) {
-        console.error('Fallback conversion N&B échoué :', e);
-      }
     } finally {
       setLoadingButton(null);
     }
@@ -65,35 +54,6 @@ function App() {
       setLoadingButton(null);
     }
   };
-
-
-//Flip côté clien
-  const flipClient = (imageSource, direction) => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.save();
-        if (direction === 'H') {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-        } else {
-          ctx.translate(0, canvas.height);
-          ctx.scale(1, -1);
-        }
-        ctx.drawImage(img, 0, 0);
-        ctx.restore();
-        resolve(canvas.toDataURL('image/png'));
-      };
-      img.onerror = () => reject(new Error('Image load failed for client flip'));
-      img.src = imageSource;
-    });
-  };
-
   
 //Gestion de l'upload de l'image par l'utilisateur
   const handleUpload = (event) => {
