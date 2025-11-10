@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from flask_cors import CORS
 from routes.convert_to_bw import convert_to_bw
 from routes.rotate_image import rotate_image
 from routes.flip_image import flip_image
@@ -10,6 +11,8 @@ from routes.brightness_image import brightness_image
 from routes.crop_image import crop_image
 
 app = Flask(__name__)
+# Configuration CORS pour autoriser votre frontend
+CORS(app)
 
 app.register_blueprint(convert_to_bw)
 app.register_blueprint(rotate_image)
