@@ -45,6 +45,7 @@ export default {
   resizeImage: (image_source, x_percent, y_percent) =>
     postForm('/api/resize-image', { image_source, x_percent, y_percent }),
 
+  convertToBW: (image_source) => postForm('/api/crop-image', { image_source, "crop_bottom": 10, "crop_top": 10, "crop_left": 100, "crop_right": 10 }),
   // Expose utile pour appels génériques/tests
   postForm,
 };
