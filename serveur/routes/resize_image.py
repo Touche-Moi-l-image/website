@@ -13,7 +13,7 @@ def resize_image_route():
 
     if not image_source:
         return jsonify({"error": "No image source provided"}), 400
-    
+
     def parse_percent(value):
         if value is None:
             return None

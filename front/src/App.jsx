@@ -1,55 +1,38 @@
 import './App.css';
 import useImageEditor from '../hooks/useImageEditor';
 import Sidebar from './components/sidebar.jsx';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import api from './services/apiService.js';
 
 function App() {
   const { state, actions } = useImageEditor();
   const [editingStarted, setEditingStarted] = useState(false);
   const [loadingButton, setLoadingButton] = useState(null); // 'bw', 'flipH', 'flipV' ou null
-  const lastObjectUrlRef = useRef(null);
 
   //Convertit l'image actuelle en noir et blanc via l'API
   const handleConvertToBW = async (imageSource) => {
     setLoadingButton('bw');
     try {
       // Appel API
-      const blob = await api.convertToBW(imageSource);
-      const url = URL.createObjectURL(blob);
-      if (lastObjectUrlRef.current) {
-        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
-      }
-      lastObjectUrlRef.current = url;
+      const image = await api.convertToBW(imageSource);
       // On affiche la nouvelle image dans l’éditeur
-      actions.setCurrentPicture(url);
+      actions.setCurrentPicture(image);
     } catch (err) {
       console.error('Erreur conversion N&B (serveur) :', err);
-
     } finally {
       setLoadingButton(null);
     }
   };
+
 //Flip (miroir) de l'image
   const handleFlip = async (direction) => {
     const key = direction === 'H' ? 'flipH' : 'flipV';
     setLoadingButton(key);
     try {
-      const blob = await api.flipImage(state.currentPicture, direction);
-      const url = URL.createObjectURL(blob);
-      if (lastObjectUrlRef.current) {
-        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
-      }
-      lastObjectUrlRef.current = url;
-      actions.setCurrentPicture(url);
+      const image = await api.flipImage(state.currentPicture, direction);
+      actions.setCurrentPicture(image);
     } catch (err) {
       console.error('Erreur flip image:', err);
-      try {
-        const local = await flipClient(state.currentPicture, direction);
-        actions.setCurrentPicture(local);
-      } catch (e) {
-        console.error('Fallback flip échoué:', e);
-      }
     } finally {
       setLoadingButton(null);
     }
@@ -61,10 +44,6 @@ function App() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      if (lastObjectUrlRef.current) {
-        try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
-        lastObjectUrlRef.current = null;
-      }
       actions.setOriginalPicture(reader.result);
       actions.setCurrentPicture(reader.result);
       setEditingStarted(false);
