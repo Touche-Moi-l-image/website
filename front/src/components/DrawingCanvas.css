@@ -1,0 +1,325 @@
+.drawing-canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  /* Le wrapper prend automatiquement la taille des canvas */
+}
+
+/* Toolbar flottante compacte */
+.drawing-toolbar-compact {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.drawing-toolbar-compact.collapsed {
+  padding: 8px;
+  width: auto;
+}
+
+.toolbar-toggle {
+  background: #ffcd3c;
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.toolbar-toggle:hover {
+  background: #357ab8;
+  transform: scale(1.1);
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.toolbar-group:first-of-type {
+  border-left: none;
+}
+
+/* Sélecteur de couleur */
+.color-display {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-display:hover {
+  border-color: #ffcd3c;
+  transform: scale(1.1);
+}
+
+.color-palette-advanced {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: rgba(30, 30, 30, 0.98);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  z-index: 101;
+  width: 280px;
+  max-width: calc(100vw - 40px);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Palette rapide */
+.quick-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.palette-color {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.palette-color:hover {
+  transform: scale(1.1);
+  border-color: #ffcd3c;
+}
+
+.palette-color.selected {
+  border: 3px solid #ffcd3c;
+  box-shadow: 0 0 10px rgba(255, 205, 60, 0.6);
+  transform: scale(1.15);
+}
+
+/* Séparateur */
+.color-separator {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 4px 0;
+}
+
+/* Section roue de couleur */
+.color-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-picker-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.color-wheel-input {
+  width: 100%;
+  height: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.color-wheel-input:hover {
+  border-color: #ffcd3c;
+}
+
+/* Section input hexadécimal */
+.hex-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hex-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hex-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.hex-input:focus {
+  border-color: #ffcd3c;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.hex-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Bouton fermer */
+.close-picker-btn {
+  background: #4CAF50;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.close-picker-btn:hover {
+  background: #45a049;
+  transform: translateY(-2px);
+}
+
+/* Taille du pinceau */
+.size-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.size-slider {
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffcd3c;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.size-slider::-webkit-slider-thumb:hover {
+  background: #357ab8;
+  transform: scale(1.2);
+}
+
+.size-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffcd3c;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.size-slider::-moz-range-thumb:hover {
+  background: #357ab8;
+  transform: scale(1.2);
+}
+
+.size-label {
+  color: #ffcd3c;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 35px;
+  text-align: center;
+}
+
+/* Outils */
+.tool-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.tool-icon:hover:not(:disabled) {
+  background: #357ab8;
+  transform: translateY(-2px);
+}
+
+.tool-icon.active {
+  background: #ffcd3c;
+  color: #1e1e1e;
+}
+
+.tool-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.tool-icon.danger:hover:not(:disabled) {
+  background: #ff4444;
+}
+
+/* Canvas */
+.background-canvas {
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  background-color: white;
+  display: block;
+  /* Position normale pour que le wrapper prenne sa taille */
+}
+
+.drawing-canvas {
+  border-radius: 10px;
+  cursor: crosshair;
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  /* Superposé sur le canvas de fond */
+}
+
