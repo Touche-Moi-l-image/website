@@ -1,13 +1,44 @@
 import './App.css';
 import useImageEditor from '../hooks/useImageEditor';
 import Sidebar from './components/sidebar.jsx';
-import { useState } from 'react';
+import DrawingCanvas from './components/DrawingCanvas.jsx';
+import { useState, useRef, useEffect } from 'react';
 import api from './services/apiService.js';
 
 function App() {
   const { state, actions } = useImageEditor();
   const [editingStarted, setEditingStarted] = useState(false);
   const [loadingButton, setLoadingButton] = useState(null); // 'bw', 'flipH', 'flipV' ou null
+  const canvasRef = useRef(null);
+  const [imageSize, setImageSize] = useState({ width: 800, height: 600 });
+  const imgRef = useRef(null);
+
+  // Calculer les dimensions de l'image pour le canvas
+  useEffect(() => {
+    if (state.currentPicture) {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = window.innerWidth * 0.7;
+        const maxHeight = window.innerHeight * 0.6;
+
+        let width = img.naturalWidth;
+        let height = img.naturalHeight;
+
+        // Redimensionner si nécessaire
+        if (width > maxWidth) {
+          height = (maxWidth / width) * height;
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = (maxHeight / height) * width;
+          height = maxHeight;
+        }
+
+        setImageSize({ width, height });
+      };
+      img.src = state.currentPicture;
+    }
+  }, [state.currentPicture]);
 
   //Convertit l'image actuelle en noir et blanc via l'API
   const handleConvertToBW = async (imageSource) => {
@@ -15,8 +46,12 @@ function App() {
     try {
       // Appel API
       const image = await api.convertToBW(imageSource);
-      // On affiche la nouvelle image dans l’éditeur
+      // On affiche la nouvelle image dans l'éditeur
       actions.setCurrentPicture(image);
+      // Recharger le canvas avec la nouvelle image
+      if (canvasRef.current?.reloadImage) {
+        canvasRef.current.reloadImage(image);
+      }
     } catch (err) {
       console.error('Erreur conversion N&B (serveur) :', err);
     } finally {
@@ -31,6 +66,10 @@ function App() {
     try {
       const image = await api.flipImage(state.currentPicture, direction);
       actions.setCurrentPicture(image);
+      // Recharger le canvas avec la nouvelle image
+      if (canvasRef.current?.reloadImage) {
+        canvasRef.current.reloadImage(image);
+      }
     } catch (err) {
       console.error('Erreur flip image:', err);
     } finally {
@@ -38,6 +77,29 @@ function App() {
     }
   };
   
+  // Appliquer le dessin sur l'image (fusion côté client)
+  const handleApplyDrawing = () => {
+    if (canvasRef.current) {
+      const mergedImage = canvasRef.current.getImageData();
+      actions.setCurrentPicture(mergedImage);
+      // Recharger le canvas avec la nouvelle image
+      if (canvasRef.current.reloadImage) {
+        canvasRef.current.reloadImage(mergedImage);
+      }
+    }
+  };
+
+  // Télécharger l'image finale
+  const handleDownload = () => {
+    if (canvasRef.current) {
+      const finalImage = canvasRef.current.getImageData();
+      const link = document.createElement('a');
+      link.download = 'image-editee.png';
+      link.href = finalImage;
+      link.click();
+    }
+  };
+
 //Gestion de l'upload de l'image par l'utilisateur
   const handleUpload = (event) => {
     const file = event.target.files[0];
@@ -79,9 +141,24 @@ function App() {
             )}
           </div>
 
-          {state.currentPicture && (
+          {state.currentPicture && !editingStarted && (
             <div className="preview">
-              <img src={state.currentPicture} alt="Prévisualisation" />
+              <img
+                ref={imgRef}
+                src={state.currentPicture}
+                alt="Prévisualisation"
+              />
+            </div>
+          )}
+
+          {state.currentPicture && editingStarted && (
+            <div className="preview">
+              <DrawingCanvas
+                ref={canvasRef}
+                imageUrl={state.currentPicture}
+                width={imageSize.width}
+                height={imageSize.height}
+              />
             </div>
           )}
 
@@ -112,13 +189,25 @@ function App() {
               </button>
 
               <button
+                className="apply-drawing-btn"
+                onClick={handleApplyDrawing}
+                disabled={loadingButton !== null}
+              >
+                ✓ Appliquer le dessin
+              </button>
+
+              <button
+                className="download-btn"
+                onClick={handleDownload}
+                disabled={loadingButton !== null}
+              >
+                💾 Télécharger
+              </button>
+
+              <button
                 className="cancel-edit-btn"
                 onClick={() => {
                   if (state.originalPicture) actions.setCurrentPicture(state.originalPicture);
-                  if (lastObjectUrlRef.current) {
-                    try { URL.revokeObjectURL(lastObjectUrlRef.current); } catch (e) {}
-                    lastObjectUrlRef.current = null;
-                  }
                   setEditingStarted(false);
                 }}
                 disabled={loadingButton !== null}

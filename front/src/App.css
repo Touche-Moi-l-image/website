@@ -184,6 +184,108 @@ body,
   justify-content: center;
 }
 
+/* ----- EDITOR CONTROLS ----- */
+.editor-controls {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
+.convert-btn,
+.flip-h-btn,
+.flip-v-btn,
+.drawing-mode-btn,
+.download-btn,
+.cancel-edit-btn,
+.apply-drawing-btn,
+.cancel-drawing-btn {
+  background-color: #ffcd3c;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: #1e1e1e;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
 
+.convert-btn:hover:not(:disabled),
+.flip-h-btn:hover:not(:disabled),
+.flip-v-btn:hover:not(:disabled),
+.drawing-mode-btn:hover:not(:disabled),
+.download-btn:hover:not(:disabled) {
+  background-color: #357ab8;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
 
+.drawing-mode-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.drawing-mode-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.download-btn {
+  background-color: #2196F3;
+  color: white;
+}
+
+.download-btn:hover:not(:disabled) {
+  background-color: #0b7dda;
+}
+
+.apply-drawing-btn {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
+}
+
+.apply-drawing-btn:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.cancel-drawing-btn {
+  background-color: #f44336;
+  color: white;
+  padding: 12px 24px;
+  font-size: 1rem;
+}
+
+.cancel-drawing-btn:hover {
+  background-color: #da190b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+}
+
+.cancel-edit-btn {
+  background-color: #ff4444;
+  color: white;
+}
+
+.cancel-edit-btn:hover:not(:disabled) {
+  background-color: #cc0000;
+}
+
+.editor-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ----- PREVIEW ----- */
+.preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+}
