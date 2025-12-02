@@ -12,6 +12,7 @@ const DrawingCanvas = forwardRef(({ imageUrl, width, height }, ref) => {
   const [historyStep, setHistoryStep] = useState(-1);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [toolbarCollapsed, setToolbarCollapsed] = useState(false);
+  const [recentColors, setRecentColors] = useState([]);
 
   // Initialiser le canvas de fond avec l'image
   useEffect(() => {
@@ -170,6 +171,18 @@ const DrawingCanvas = forwardRef(({ imageUrl, width, height }, ref) => {
     }
   };
 
+  // Fonction pour ajouter une couleur aux couleurs récentes
+  const addToRecentColors = (color) => {
+    setRecentColors(prevColors => {
+      // Supprimer la couleur si elle existe déjà
+      const filtered = prevColors.filter(c => c !== color);
+      // Ajouter la couleur au début
+      const newColors = [color, ...filtered];
+      // Limiter à 8 couleurs récentes
+      return newColors.slice(0, 4);
+    });
+  };
+
   const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'];
 
   return (
@@ -214,6 +227,30 @@ const DrawingCanvas = forwardRef(({ imageUrl, width, height }, ref) => {
                   {/* Séparateur */}
                   <div className="color-separator"></div>
 
+                  {/* Couleurs récentes */}
+                  {recentColors.length > 0 && (
+                    <>
+                      <div className="recent-colors-section">
+                        <label className="recent-colors-label">Couleurs récentes :</label>
+                        <div className="recent-colors">
+                          {recentColors.map((color, index) => (
+                            <button
+                              key={`${color}-${index}`}
+                              className={`palette-color ${brushColor === color && !isEraser ? 'selected' : ''}`}
+                              style={{ backgroundColor: color }}
+                              onClick={() => {
+                                setBrushColor(color);
+                                setIsEraser(false);
+                              }}
+                              title={color}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <div className="color-separator"></div>
+                    </>
+                  )}
+
                   {/* Sélecteur de couleur natif */}
                   <div className="color-picker-section">
                     <label className="color-picker-label">Roue de couleur :</label>
@@ -221,8 +258,15 @@ const DrawingCanvas = forwardRef(({ imageUrl, width, height }, ref) => {
                       type="color"
                       value={brushColor}
                       onChange={(e) => {
-                        setBrushColor(e.target.value);
+                        const newColor = e.target.value;
+                        setBrushColor(newColor);
                         setIsEraser(false);
+                      }}
+                      onBlur={(e) => {
+                        addToRecentColors(e.target.value);
+                      }}
+                      onMouseUp={(e) => {
+                        addToRecentColors(e.target.value);
                       }}
                       className="color-wheel-input"
                     />
@@ -241,6 +285,7 @@ const DrawingCanvas = forwardRef(({ imageUrl, width, height }, ref) => {
                           setBrushColor(value);
                           if (value.length === 7) {
                             setIsEraser(false);
+                            addToRecentColors(value);
                           }
                         }
                       }}

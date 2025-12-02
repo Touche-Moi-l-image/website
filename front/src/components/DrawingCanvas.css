@@ -126,6 +126,25 @@
   margin: 4px 0;
 }
 
+/* Section couleurs récentes */
+.recent-colors-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-colors-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recent-colors {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
 /* Section roue de couleur */
 .color-picker-section {
   display: flex;
@@ -322,4 +341,3 @@
   z-index: 1;
   /* Superposé sur le canvas de fond */
 }
-
