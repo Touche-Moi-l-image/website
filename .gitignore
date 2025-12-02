@@ -1,1 +1,54 @@
-./server/routes/__pycache__/
+# Root .gitignore for Python (Flask) + Front (Vite) + OS/editor files
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+pip-wheel-metadata/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Build artifacts (just in case)
+build/
+dist/
+
+# --- Node/Front-end (project-level shortcuts; front/.gitignore also exists) ---
+/front/node_modules/
+/front/dist/
+/front/dist-ssr/
+*.local
+
+# --- Environment files (keep examples) ---
+.env
+.env.*
+!.env.example
+
+# --- Editors/OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.sln
+*.njsproj
+*.ntvs*
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Others ---
+/serveur/routes/__pycache__

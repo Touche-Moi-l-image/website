@@ -11,6 +11,7 @@ const initialState = {
   green: 100,
   blue: 100,
   blackAndWhite: false,
+  drawingMode: false,
 };
 
 // Types d'actions
@@ -24,6 +25,7 @@ export const ACTIONS = {
   SET_GREEN: 'SET_GREEN',
   SET_BLUE: 'SET_BLUE',
   TOGGLE_BLACK_AND_WHITE: 'TOGGLE_BLACK_AND_WHITE',
+  TOGGLE_DRAWING_MODE: 'TOGGLE_DRAWING_MODE',
   RESET: 'RESET',
 };
 
@@ -48,6 +50,8 @@ function imageEditorReducer(state, action) {
       return { ...state, blue: action.payload };
     case ACTIONS.TOGGLE_BLACK_AND_WHITE:
       return { ...state, blackAndWhite: !state.blackAndWhite };
+    case ACTIONS.TOGGLE_DRAWING_MODE:
+      return { ...state, drawingMode: !state.drawingMode };
     case ACTIONS.RESET:
       return initialState;
     default:
@@ -105,6 +109,10 @@ export default function useImageEditor() {
     // TODO: Implémenter la logique noir et blanc
   };
 
+  const toggleDrawingMode = () => {
+    dispatch({ type: ACTIONS.TOGGLE_DRAWING_MODE });
+  };
+
   const reset = () => {
     dispatch({ type: ACTIONS.RESET });
     // TODO: Implémenter la logique de réinitialisation
@@ -122,6 +130,7 @@ export default function useImageEditor() {
       adjustGreen,
       adjustBlue,
       toggleBlackAndWhite,
+      toggleDrawingMode,
       reset,
     },
   };
