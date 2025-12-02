@@ -9,6 +9,7 @@ from routes.resize_image import resize_image
 from routes.contrast_image import contrast_image
 from routes.brightness_image import brightness_image
 from routes.crop_image import crop_image
+from routes.remove_background import remove_background
 
 app = Flask(__name__)
 # Configuration CORS pour autoriser votre frontend
@@ -22,6 +23,7 @@ app.register_blueprint(resize_image)
 app.register_blueprint(contrast_image)
 app.register_blueprint(brightness_image)
 app.register_blueprint(crop_image)
+app.register_blueprint(remove_background)
 
 if __name__ == '__main__':
     dev_mode = os.getenv('DEV','') == '1'

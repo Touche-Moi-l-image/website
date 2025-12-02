@@ -32,6 +32,9 @@ export default {
   // image_source : URL publique ou chemin côté serveur (string)
   convertToBW: (image_source) => postForm('/api/convert-to-bw', { image_source }),
 
+  // Remove background (alpha PNG) via local 'rembg'
+  removeBackground: (image_source) => postForm('/api/remove-background', { image_source }),
+
   // Rotation : angle en degrés (number ou string)
   rotateImage: (image_source, angle) => postForm('/api/rotate-image', { image_source, angle }),
 
@@ -45,7 +48,10 @@ export default {
   resizeImage: (image_source, x_percent, y_percent) =>
     postForm('/api/resize-image', { image_source, x_percent, y_percent }),
 
-  convertToBW: (image_source) => postForm('/api/crop-image', { image_source, "crop_bottom": 10, "crop_top": 10, "crop_left": 100, "crop_right": 10 }),
+  // Crop : crop_top, crop_bottom, crop_left, crop_right (nombres ou strings)
+  cropImage: (image_source, crop_top, crop_bottom, crop_left, crop_right) =>
+    postForm('/api/crop-image', { image_source, crop_top, crop_bottom, crop_left, crop_right }),
+
   // Expose utile pour appels génériques/tests
   postForm,
 };
