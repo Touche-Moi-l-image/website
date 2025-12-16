@@ -29,8 +29,11 @@ function App() {
   const [contrastVal, setContrastVal] = useState(0);
   const [rotationVal, setRotationVal] = useState(0);
 
-  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & TIMERS ---
+  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & PIPELINE (FRONTEND ONLY) ---
+  // baseImageRef : contient l'image servant de base au pipeline (peut inclure les effets BAKED d'un preset)
   const baseImageRef = useRef(null);
+  // committedImageRef : contient l'image "Stable" (après upload, flip, merge) SANS les effets baked des presets
+  const committedImageRef = useRef(null);
   const activeSliderRef = useRef(null);
 
   // Refs pour les timers de saisie automatique (debounce)
@@ -42,6 +45,7 @@ function App() {
   useEffect(() => {
     if (state.currentPicture && !baseImageRef.current) {
       baseImageRef.current = state.currentPicture;
+      committedImageRef.current = state.currentPicture;
     }
   }, [state.currentPicture]);
 
@@ -71,55 +75,67 @@ function App() {
     }
   }, [state.currentPicture]);
 
-  // Gestionnaire intelligent pour les sliders
-  const handleSliderChange = async (sliderName, apiCall) => {
-    if (!state.currentPicture) return;
-    setLoadingButton(sliderName);
+  // --- Pipeline Unifié (Frontend Chain) ---
+
+  const applyFilters = async (
+    overrideBrightness = brightnessVal,
+    overrideContrast = contrastVal,
+    overrideRotation = rotationVal
+  ) => {
+    if (!baseImageRef.current) return;
+    setLoadingButton('filters');
 
     try {
-      if (activeSliderRef.current !== sliderName) {
-        if (activeSliderRef.current !== null) {
-          baseImageRef.current = state.currentPicture;
-        } else {
-          baseImageRef.current = state.currentPicture;
-        }
-        activeSliderRef.current = sliderName;
+      // 1. On part de l'image de base
+      let resultImage = baseImageRef.current;
+
+      // 2. Application séquentielle des filtres (simule un pipeline backend)
+
+      // Luminosité
+      if (overrideBrightness !== 0) {
+        resultImage = await api.brightnessImage(resultImage, overrideBrightness + 100);
       }
 
-      const newImage = await apiCall(baseImageRef.current);
+      // Contraste
+      if (overrideContrast !== 0) {
+        resultImage = await api.contrastImage(resultImage, overrideContrast + 100);
+      }
 
-      actions.setCurrentPicture(newImage);
+      // Rotation
+      if (overrideRotation !== 0) {
+        resultImage = await api.rotateImage(resultImage, overrideRotation);
+      }
+
+      actions.setCurrentPicture(resultImage);
       if (canvasRef.current?.reloadImage) {
-        canvasRef.current.reloadImage(newImage);
+        canvasRef.current.reloadImage(resultImage);
       }
-
     } catch (err) {
-      console.error(`Erreur ${sliderName}:`, err);
+      console.error("Erreur pipeline frontend:", err);
     } finally {
       setLoadingButton(null);
     }
   };
 
+  // --- Handlers des Sliders ---
+
+  const handleBrightnessChange = (val) => {
+    setBrightnessVal(val);
+  };
+
+  const commitBrightness = (val) => applyFilters(val, contrastVal, rotationVal);
+  const commitContrast = (val) => applyFilters(brightnessVal, val, rotationVal);
+  const commitRotation = (val) => applyFilters(brightnessVal, contrastVal, val);
+
+
+  // Ces fonctions sont maintenant des wrappers vers applyFilters
+  const applyBrightness = (val = brightnessVal) => commitBrightness(val);
+  const applyContrast = (val = contrastVal) => commitContrast(val);
+  const applyRotation = (val = rotationVal) => commitRotation(val);
   // --- Handlers des Sliders (valeurs absolues appliquées à la base) ---
 
   // Note: On accepte un argument optionnel 'val' pour les appels depuis les timers/inputs
-  const applyBrightness = (val = brightnessVal) => {
-    handleSliderChange('brightness', (src) =>
-      api.brightnessImage(src, val + 100)
-    );
-  };
 
-  const applyContrast = (val = contrastVal) => {
-    handleSliderChange('contrast', (src) =>
-      api.contrastImage(src, val + 100)
-    );
-  };
-
-  const applyRotation = (val = rotationVal) => {
-    handleSliderChange('rotation', (src) =>
-      api.rotateImage(src, val)
-    );
-  };
 
   // --- Helpers pour la saisie numérique (Auto-validation) ---
 
@@ -155,11 +171,15 @@ function App() {
   const commitAndApply = async (apiCall, key) => {
     setLoadingButton(key);
     try {
-      const image = await apiCall(state.currentPicture);
+      // 1. Appliquer sur la base STABLE (committed)
+      const image = await apiCall(committedImageRef.current || baseImageRef.current);
       actions.setCurrentPicture(image);
       if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(image);
 
+      // 2. Mettre à jour les refs
       baseImageRef.current = image;
+      committedImageRef.current = image; // On commit cette modification
+
       activeSliderRef.current = null;
       setBrightnessVal(0);
       setContrastVal(0);
@@ -243,19 +263,60 @@ function App() {
   const handleApplyPreset = (preset) => {
     commitAndApply(async (initialSrc) => {
       let currentSrc = initialSrc;
+  const handleApplyPreset = async (preset) => {
+    setLoadingButton(`preset-${preset.id}`);
+    try {
+      // 1. Identifier les opérations "Slider" vs "Hard/Baked"
+      let newBrightness = 0;
+      let newContrast = 0;
+      let newRotation = 0;
+
+      const bakedOps = [];
+
       for (const op of preset.ops) {
-        if (op.type === 'contrast') {
-          currentSrc = await api.contrastImage(currentSrc, op.value + 100);
-        } else if (op.type === 'brightness') {
-          currentSrc = await api.brightnessImage(currentSrc, op.value + 100);
-        } else if (op.type === 'blur') {
-          currentSrc = await api.blurImage(currentSrc, op.value);
-        } else if (op.type === 'bw') {
-          currentSrc = await api.convertToBW(currentSrc);
+        if (op.type === 'brightness') {
+          newBrightness = op.value;
+        } else if (op.type === 'contrast') {
+          newContrast = op.value;
+        } else if (op.type === 'rotation') {
+          newRotation = op.value;
+        } else {
+          // Opérations qui modifient forcément les pixels de base (Blur, BW...)
+          bakedOps.push(op);
         }
       }
-      return currentSrc;
-    }, `preset-${preset.id}`);
+
+      // 2. Appliquer les opérations "Baked" sur l'image de base STABLE (Committed)
+      // Cela évite l'accumulation si on clique sur plusieurs presets à la suite
+
+      let currentBase = committedImageRef.current;
+      if (!currentBase) currentBase = baseImageRef.current;
+
+      for (const op of bakedOps) {
+        if (op.type === 'blur') {
+          currentBase = await api.blurImage(currentBase, op.value);
+        } else if (op.type === 'bw') {
+          currentBase = await api.convertToBW(currentBase);
+        }
+        // Ajouter d'autres cas si nécessaire
+      }
+
+      // 3. Mettre à jour la référence de base du pipeline (mais PAS committedImageRef)
+      baseImageRef.current = currentBase;
+
+      // 4. Mettre à jour les sliders (UI)
+      setBrightnessVal(newBrightness);
+      setContrastVal(newContrast);
+      setRotationVal(newRotation);
+
+      // 5. Appliquer le pipeline visuel (Sliders) sur la nouvelle base
+      await applyFilters(newBrightness, newContrast, newRotation);
+
+    } catch (err) {
+      console.error("Erreur preset:", err);
+    } finally {
+      setLoadingButton(null);
+    }
   };
 
   const handleApplyDrawing = () => {
@@ -263,6 +324,7 @@ function App() {
       const mergedImage = canvasRef.current.getImageData();
       actions.setCurrentPicture(mergedImage);
       baseImageRef.current = mergedImage;
+      committedImageRef.current = mergedImage; // On commit le dessin
       if (canvasRef.current.reloadImage) {
         canvasRef.current.reloadImage(mergedImage);
       }
@@ -289,6 +351,7 @@ function App() {
       setEditingStarted(false);
 
       baseImageRef.current = reader.result;
+      committedImageRef.current = reader.result;
       activeSliderRef.current = null;
       setBrightnessVal(0);
       setContrastVal(0);
@@ -301,6 +364,7 @@ function App() {
     if (state.originalPicture) {
       actions.setCurrentPicture(state.originalPicture);
       baseImageRef.current = state.originalPicture;
+      committedImageRef.current = state.originalPicture;
     }
     if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(state.originalPicture);
     setEditingStarted(false);
