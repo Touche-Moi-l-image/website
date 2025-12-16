@@ -32,6 +32,7 @@ function App() {
   const baseImageRef = useRef(null);
   // committedImageRef : contient l'image "Stable" (après upload, flip, merge) SANS les effets baked des presets
   const committedImageRef = useRef(null);
+  const activeSliderRef = useRef(null);
 
   // Refs pour les timers de saisie automatique (debounce)
   const brightnessTimeoutRef = useRef(null);
