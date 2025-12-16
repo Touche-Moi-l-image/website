@@ -425,7 +425,7 @@ function App() {
         onOpenAbout={() => setShowAbout(true)}
         onOpenSettings={() => setShowSettings(true)}
       />
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <div className={`flex-1 flex flex-col h-full relative ${activeTab === 'home' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
         {activeTab === 'home' && (
           <Showcase onStartEditing={() => setActiveTab('editor')} />
         )}
