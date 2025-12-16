@@ -485,7 +485,7 @@ function App() {
             */}
 
             {editingStarted && (
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-4 lg:grid-rows-1 gap-6 flex-1 min-h-0 overflow-hidden">
                 {/* MAIN CANVAS AREA - Spans 3 cols */}
                 <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
                   <BentoCard className="flex-1 flex items-center justify-center relative overflow-hidden group">
@@ -587,7 +587,7 @@ function App() {
                 <div className="flex flex-col gap-6 h-full overflow-y-auto min-h-0 pr-2">
 
                   {/* DRAWING TOOLS */}
-                  <BentoCard title="Outils de Dessin" className="flex flex-col gap-4">
+                  <BentoCard title="Outils de Dessin" className="flex flex-col gap-4 max-h-[40vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
                     <div className="flex flex-col gap-4">
                       {/* Tools Toggles */}
                       <div className="flex gap-2 justify-center bg-gray-800/50 p-1 rounded-lg">
@@ -681,7 +681,7 @@ function App() {
                   </BentoCard>
 
                   {/* ADJUSTMENTS */}
-                  <BentoCard title="Ajustements" className="flex flex-col gap-6">
+                  <BentoCard title="Ajustements" className="flex flex-col gap-6 max-h-[30vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
 
                     {/* Brightness */}
                     <div className="space-y-2">
@@ -739,7 +739,7 @@ function App() {
                   </BentoCard>
 
                   {/* PRESETS */}
-                  <BentoCard title="Filtres" className="flex-1">
+                  <BentoCard title="Filtres" className="max-h-[30vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
                     <FilterPresets
                       onApplyPreset={handleApplyPreset}
                       disabled={loadingButton !== null}

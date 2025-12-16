@@ -1,6 +1,6 @@
 import React from 'react';
 
-const BentoCard = ({ children, className = '', title, delay = 0 }) => {
+const BentoCard = ({ children, className = '', contentClassName = '', title, delay = 0 }) => {
     return (
         <div
             className={`relative overflow-hidden bg-gray-900/60 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,205,60,0.1)] hover:border-brand-yellow/30 hover:-translate-y-1 group ${className}`}
@@ -14,7 +14,7 @@ const BentoCard = ({ children, className = '', title, delay = 0 }) => {
                     {title}
                 </h3>
             )}
-            <div className="relative z-10 h-full">
+            <div className={`relative z-10 h-full ${contentClassName}`}>
                 {children}
             </div>
         </div>
