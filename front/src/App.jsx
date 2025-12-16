@@ -2,16 +2,45 @@ import './App.css';
 import useImageEditor from '../hooks/useImageEditor';
 import Sidebar from './components/sidebar.jsx';
 import DrawingCanvas from './components/DrawingCanvas.jsx';
+import Showcase from './components/Showcase.jsx';
+import AboutModal from './components/AboutModal.jsx';
+import SettingsModal from './components/SettingsModal.jsx';
 import { useState, useRef, useEffect } from 'react';
 import api from './services/apiService.js';
 
 function App() {
   const { state, actions } = useImageEditor();
+
+  // Navigation State
+  const [activeTab, setActiveTab] = useState('home');
+  const [showAbout, setShowAbout] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
   const [editingStarted, setEditingStarted] = useState(false);
-  const [loadingButton, setLoadingButton] = useState(null); // 'bw', 'flipH', 'flipV' ou null
+  const [loadingButton, setLoadingButton] = useState(null);
   const canvasRef = useRef(null);
   const [imageSize, setImageSize] = useState({ width: 800, height: 600 });
-  const imgRef = useRef(null);
+
+  // États pour les sliders (valeurs visuelles)
+  const [brightnessVal, setBrightnessVal] = useState(0);
+  const [contrastVal, setContrastVal] = useState(0);
+  const [rotationVal, setRotationVal] = useState(0);
+
+  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & TIMERS ---
+  const baseImageRef = useRef(null);
+  const activeSliderRef = useRef(null);
+
+  // Refs pour les timers de saisie automatique (debounce)
+  const brightnessTimeoutRef = useRef(null);
+  const contrastTimeoutRef = useRef(null);
+  const rotationTimeoutRef = useRef(null);
+
+  // Initialisation de l'image de référence quand on charge une nouvelle image
+  useEffect(() => {
+    if (state.currentPicture && !baseImageRef.current) {
+      baseImageRef.current = state.currentPicture;
+    }
+  }, [state.currentPicture]);
 
   // Calculer les dimensions de l'image pour le canvas
   useEffect(() => {
@@ -24,7 +53,6 @@ function App() {
         let width = img.naturalWidth;
         let height = img.naturalHeight;
 
-        // Redimensionner si nécessaire
         if (width > maxWidth) {
           height = (maxWidth / width) * height;
           width = maxWidth;
@@ -40,56 +68,120 @@ function App() {
     }
   }, [state.currentPicture]);
 
-  //Convertit l'image actuelle en noir et blanc via l'API
-  const handleConvertToBW = async (imageSource) => {
-    setLoadingButton('bw');
+  // Gestionnaire intelligent pour les sliders
+  const handleSliderChange = async (sliderName, apiCall) => {
+    if (!state.currentPicture) return;
+    setLoadingButton(sliderName);
+
     try {
-      // Appel API
-      const image = await api.convertToBW(imageSource);
-      // On affiche la nouvelle image dans l'éditeur
-      actions.setCurrentPicture(image);
-      // Recharger le canvas avec la nouvelle image
-      if (canvasRef.current?.reloadImage) {
-        canvasRef.current.reloadImage(image);
+      if (activeSliderRef.current !== sliderName) {
+        if (activeSliderRef.current !== null) {
+          baseImageRef.current = state.currentPicture;
+        } else {
+          baseImageRef.current = state.currentPicture;
+        }
+        activeSliderRef.current = sliderName;
       }
+
+      const newImage = await apiCall(baseImageRef.current);
+
+      actions.setCurrentPicture(newImage);
+      if (canvasRef.current?.reloadImage) {
+        canvasRef.current.reloadImage(newImage);
+      }
+
     } catch (err) {
-      console.error('Erreur conversion N&B (serveur) :', err);
+      console.error(`Erreur ${sliderName}:`, err);
     } finally {
       setLoadingButton(null);
     }
   };
 
-//Flip (miroir) de l'image
-  const handleFlip = async (direction) => {
-    const key = direction === 'H' ? 'flipH' : 'flipV';
+  // --- Handlers des Sliders (valeurs absolues appliquées à la base) ---
+
+  // Note: On accepte un argument optionnel 'val' pour les appels depuis les timers/inputs
+  const applyBrightness = (val = brightnessVal) => {
+    handleSliderChange('brightness', (src) =>
+      api.brightnessImage(src, val + 100)
+    );
+  };
+
+  const applyContrast = (val = contrastVal) => {
+    handleSliderChange('contrast', (src) =>
+      api.contrastImage(src, val + 100)
+    );
+  };
+
+  const applyRotation = (val = rotationVal) => {
+    handleSliderChange('rotation', (src) =>
+      api.rotateImage(src, val)
+    );
+  };
+
+  // --- Helpers pour la saisie numérique (Auto-validation) ---
+
+  const handleInputNumberChange = (e, setVal, timeoutRef, applyFn) => {
+    const val = Number(e.target.value);
+    setVal(val);
+
+    // Si un timer était déjà en cours (l'utilisateur tape encore), on l'annule
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    // On lance un nouveau timer : si pas d'autre frappe d'ici 800ms, on valide
+    timeoutRef.current = setTimeout(() => {
+      applyFn(val);
+    }, 800);
+  };
+
+  const handleInputKeyDown = (e, timeoutRef, applyFn) => {
+    if (e.key === 'Enter') {
+      // Validation immédiate : on annule le timer automatique
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      applyFn();
+    }
+  };
+
+  const handleInputBlur = (timeoutRef, applyFn) => {
+    // Validation immédiate au clic ailleurs
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    applyFn();
+  };
+
+  // --- Handlers des Boutons ---
+
+  const commitAndApply = async (apiCall, key) => {
     setLoadingButton(key);
     try {
-      const image = await api.flipImage(state.currentPicture, direction);
+      const image = await apiCall(state.currentPicture);
       actions.setCurrentPicture(image);
-      // Recharger le canvas avec la nouvelle image
-      if (canvasRef.current?.reloadImage) {
-        canvasRef.current.reloadImage(image);
-      }
+      if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(image);
+
+      baseImageRef.current = image;
+      activeSliderRef.current = null;
+      setBrightnessVal(0);
+      setContrastVal(0);
+      setRotationVal(0);
     } catch (err) {
-      console.error('Erreur flip image:', err);
+      console.error(err);
     } finally {
       setLoadingButton(null);
     }
   };
-  
-  // Appliquer le dessin sur l'image (fusion côté client)
+
+  const handleConvertToBW = () => commitAndApply((src) => api.convertToBW(src), 'bw');
+  const handleFlip = (direction) => commitAndApply((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
+
   const handleApplyDrawing = () => {
     if (canvasRef.current) {
       const mergedImage = canvasRef.current.getImageData();
       actions.setCurrentPicture(mergedImage);
-      // Recharger le canvas avec la nouvelle image
+      baseImageRef.current = mergedImage;
       if (canvasRef.current.reloadImage) {
         canvasRef.current.reloadImage(mergedImage);
       }
     }
   };
 
-  // Télécharger l'image finale
   const handleDownload = () => {
     if (canvasRef.current) {
       const finalImage = canvasRef.current.getImageData();
@@ -100,7 +192,6 @@ function App() {
     }
   };
 
-//Gestion de l'upload de l'image par l'utilisateur
   const handleUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -109,114 +200,225 @@ function App() {
       actions.setOriginalPicture(reader.result);
       actions.setCurrentPicture(reader.result);
       setEditingStarted(false);
+
+      baseImageRef.current = reader.result;
+      activeSliderRef.current = null;
+      setBrightnessVal(0);
+      setContrastVal(0);
+      setRotationVal(0);
     };
     reader.readAsDataURL(file);
   };
 
+  const handleReset = () => {
+    if (state.originalPicture) {
+      actions.setCurrentPicture(state.originalPicture);
+      baseImageRef.current = state.originalPicture;
+    }
+    if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(state.originalPicture);
+    setEditingStarted(false);
+
+    setBrightnessVal(0);
+    setContrastVal(0);
+    setRotationVal(0);
+    activeSliderRef.current = null;
+  };
+
+  const numberInputStyle = {
+    width: '60px',
+    background: '#333',
+    border: '1px solid #555',
+    color: '#fff',
+    borderRadius: '4px',
+    padding: '2px 5px',
+    fontSize: '0.8rem',
+    textAlign: 'right'
+  };
+
   return (
     <div className="layout">
-      <Sidebar />
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      <Sidebar
+        activeTab={activeTab}
+        onNavigate={setActiveTab}
+        onOpenAbout={() => setShowAbout(true)}
+        onOpenSettings={() => setShowSettings(true)}
+      />
       <div className="main-content">
-        <div className="app">
-          <h1>Touche Moi l'Image</h1>
+        {activeTab === 'home' && (
+          <Showcase onStartEditing={() => setActiveTab('editor')} />
+        )}
 
-          <div className="upload-section">
-            {!state.currentPicture && (
-              <label className="upload-btn">
-                Sélectionner une image{' '}
-                <input type="file" accept="image/*" onChange={handleUpload} hidden />
-              </label>
-            )}
+        {activeTab === 'editor' && (
+          <div className="app">
+            <h1>Touche Moi l'Image</h1>
 
-            {state.currentPicture && !editingStarted && (
-              <>
-                <label className="change-btn">
-                  Changer d'image{' '}
+            <div className="upload-section">
+              {!state.currentPicture && (
+                <label className="upload-btn">
+                  Sélectionner une image{' '}
                   <input type="file" accept="image/*" onChange={handleUpload} hidden />
                 </label>
-                <button className="edit-btn" onClick={() => setEditingStarted(true)}>
-                  Commencer à modifier
-                </button>
+              )}
+
+              {state.currentPicture && !editingStarted && (
+                <>
+                  <label className="change-btn">
+                    Changer d'image{' '}
+                    <input type="file" accept="image/*" onChange={handleUpload} hidden />
+                  </label>
+                  <button className="edit-btn" onClick={() => setEditingStarted(true)}>
+                    Commencer à modifier
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Note: Showcase conditional REMOVED here, it is now at top level based on activeTab */}
+
+            {state.currentPicture && !editingStarted && (
+              <div className="preview">
+                <img src={state.currentPicture} alt="Prévisualisation" />
+              </div>
+            )}
+
+            {state.currentPicture && editingStarted && (
+              <>
+                <div className="preview">
+                  <DrawingCanvas
+                    ref={canvasRef}
+                    imageUrl={state.currentPicture}
+                    width={imageSize.width}
+                    height={imageSize.height}
+                  />
+                  {loadingButton && <div className="loader-overlay">Traitement...</div>}
+                </div>
+
+                <div className="editor-controls">
+
+                  <div className="control-group buttons-row">
+                    <button className="convert-btn" onClick={handleConvertToBW} disabled={loadingButton !== null}>
+                      N&B
+                    </button>
+                    <button className="flip-h-btn" onClick={() => handleFlip('H')} disabled={loadingButton !== null}>
+                      Flip H
+                    </button>
+                    <button className="flip-v-btn" onClick={() => handleFlip('V')} disabled={loadingButton !== null}>
+                      Flip V
+                    </button>
+                  </div>
+
+                  <hr className="divider" />
+
+                  <div className="control-group sliders-column">
+
+                    {/* Luminosité */}
+                    <div className="slider-container">
+                      <label>
+                        <span>Luminosité</span>
+                        <input
+                          type="number"
+                          min="-100"
+                          max="100"
+                          value={brightnessVal}
+                          onChange={(e) => handleInputNumberChange(e, setBrightnessVal, brightnessTimeoutRef, applyBrightness)}
+                          onKeyDown={(e) => handleInputKeyDown(e, brightnessTimeoutRef, applyBrightness)}
+                          onBlur={() => handleInputBlur(brightnessTimeoutRef, applyBrightness)}
+                          disabled={loadingButton !== null}
+                          style={numberInputStyle}
+                        />
+                      </label>
+                      <input
+                        type="range"
+                        min="-100" max="100"
+                        value={brightnessVal}
+                        onChange={(e) => setBrightnessVal(Number(e.target.value))}
+                        onMouseUp={() => applyBrightness()}
+                        onTouchEnd={() => applyBrightness()}
+                        disabled={loadingButton !== null}
+                      />
+                    </div>
+
+                    {/* Contraste */}
+                    <div className="slider-container">
+                      <label>
+                        <span>Contraste</span>
+                        <input
+                          type="number"
+                          min="-100"
+                          max="100"
+                          value={contrastVal}
+                          onChange={(e) => handleInputNumberChange(e, setContrastVal, contrastTimeoutRef, applyContrast)}
+                          onKeyDown={(e) => handleInputKeyDown(e, contrastTimeoutRef, applyContrast)}
+                          onBlur={() => handleInputBlur(contrastTimeoutRef, applyContrast)}
+                          disabled={loadingButton !== null}
+                          style={numberInputStyle}
+                        />
+                      </label>
+                      <input
+                        type="range"
+                        min="-100" max="100"
+                        value={contrastVal}
+                        onChange={(e) => setContrastVal(Number(e.target.value))}
+                        onMouseUp={() => applyContrast()}
+                        onTouchEnd={() => applyContrast()}
+                        disabled={loadingButton !== null}
+                      />
+                    </div>
+
+                    {/* Rotation */}
+                    <div className="slider-container">
+                      <label>
+                        <span>Rotation</span>
+                        <input
+                          type="number"
+                          min="-180"
+                          max="180"
+                          value={rotationVal}
+                          onChange={(e) => handleInputNumberChange(e, setRotationVal, rotationTimeoutRef, applyRotation)}
+                          onKeyDown={(e) => handleInputKeyDown(e, rotationTimeoutRef, applyRotation)}
+                          onBlur={() => handleInputBlur(rotationTimeoutRef, applyRotation)}
+                          disabled={loadingButton !== null}
+                          style={numberInputStyle}
+                        />
+                      </label>
+                      <input
+                        type="range"
+                        min="-180" max="180"
+                        value={rotationVal}
+                        onChange={(e) => setRotationVal(Number(e.target.value))}
+                        onMouseUp={() => applyRotation()}
+                        onTouchEnd={() => applyRotation()}
+                        disabled={loadingButton !== null}
+                      />
+                    </div>
+                  </div>
+
+                  <hr className="divider" />
+
+                  <div className="control-group buttons-row">
+                    <button className="apply-drawing-btn" onClick={handleApplyDrawing} disabled={loadingButton !== null}>
+                      ✓ Fusionner Dessin
+                    </button>
+                    <button className="download-btn" onClick={handleDownload} disabled={loadingButton !== null}>
+                      💾 Télécharger
+                    </button>
+                  </div>
+
+                  <button
+                    className="cancel-edit-btn"
+                    onClick={handleReset}
+                    disabled={loadingButton !== null}
+                  >
+                    Annuler / Reset
+                  </button>
+                </div>
               </>
             )}
+
           </div>
-
-          {state.currentPicture && !editingStarted && (
-            <div className="preview">
-              <img
-                ref={imgRef}
-                src={state.currentPicture}
-                alt="Prévisualisation"
-              />
-            </div>
-          )}
-
-          {state.currentPicture && editingStarted && (
-            <div className="preview">
-              <DrawingCanvas
-                ref={canvasRef}
-                imageUrl={state.currentPicture}
-                width={imageSize.width}
-                height={imageSize.height}
-              />
-            </div>
-          )}
-
-          {state.currentPicture && editingStarted && (
-            <div className="editor-controls">
-              <button
-                className="convert-btn"
-                onClick={() => handleConvertToBW(state.currentPicture)}
-                disabled={loadingButton !== null}
-              >
-                {loadingButton === 'bw' ? 'Traitement...' : 'Convertir en N&B'}
-              </button>
-
-              <button
-                className="flip-h-btn"
-                onClick={() => handleFlip('H')}
-                disabled={loadingButton !== null}
-              >
-                {loadingButton === 'flipH' ? 'Traitement...' : 'Flip Horizontal'}
-              </button>
-
-              <button
-                className="flip-v-btn"
-                onClick={() => handleFlip('V')}
-                disabled={loadingButton !== null}
-              >
-                {loadingButton === 'flipV' ? 'Traitement...' : 'Flip Vertical'}
-              </button>
-
-              <button
-                className="apply-drawing-btn"
-                onClick={handleApplyDrawing}
-                disabled={loadingButton !== null}
-              >
-                ✓ Appliquer le dessin
-              </button>
-
-              <button
-                className="download-btn"
-                onClick={handleDownload}
-                disabled={loadingButton !== null}
-              >
-                💾 Télécharger
-              </button>
-
-              <button
-                className="cancel-edit-btn"
-                onClick={() => {
-                  if (state.originalPicture) actions.setCurrentPicture(state.originalPicture);
-                  setEditingStarted(false);
-                }}
-                disabled={loadingButton !== null}
-              >
-                Annuler
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

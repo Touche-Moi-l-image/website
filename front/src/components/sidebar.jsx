@@ -1,8 +1,8 @@
 import React from 'react';
 import '../App.css';
-import logo from '../assets/logo.png'; 
+import logo from '../assets/logo.png';
 
-function Sidebar() {
+function Sidebar({ activeTab, onNavigate, onOpenAbout, onOpenSettings }) {
   return (
     <div className="sidebar">
       {/* --- Logo en haut --- */}
@@ -12,14 +12,24 @@ function Sidebar() {
 
       {/* --- Navigation principale --- */}
       <div className="sidebar-nav">
-        <button>🏠 Accueil</button>
-        <button>🖌️ Éditeur</button>
-        <button>ℹ️ À propos</button>
+        <button
+          className={activeTab === 'home' ? 'active' : ''}
+          onClick={() => onNavigate('home')}
+        >
+          🏠 Accueil
+        </button>
+        <button
+          className={activeTab === 'editor' ? 'active' : ''}
+          onClick={() => onNavigate('editor')}
+        >
+          🖌️ Éditeur
+        </button>
+        <button onClick={onOpenAbout}>ℹ️ À propos</button>
       </div>
 
       {/* --- Paramètres en bas --- */}
       <div className="sidebar-bottom">
-        <button>⚙️ Paramètres</button>
+        <button onClick={onOpenSettings}>⚙️ Paramètres</button>
       </div>
     </div>
   );

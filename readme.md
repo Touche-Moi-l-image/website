@@ -177,4 +177,4 @@ curl -X POST \
 
 **Exemple d'image après transformation :**
 
-![Image rognée](src/img/croped_image.png)
+![Image rognée](src/img/croped-image.png)
