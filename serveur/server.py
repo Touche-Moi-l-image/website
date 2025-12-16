@@ -12,6 +12,11 @@ from routes.crop_image import crop_image
 from routes.remove_background import remove_background
 
 app = Flask(__name__)
+
+app.config['MAX_CONTENT_LENGTH'] = None  # Désactive la limite globale de taille de requête
+app.config['MAX_FORM_MEMORY_SIZE'] = 1024 * 1024 * 1024 * 10  # 50 MB
+app.config['MAX_FORM_PARTS_SIZE'] = 10 * 1024 * 1024 * 10
+
 # Configuration CORS pour autoriser votre frontend
 CORS(app)
 
