@@ -2,7 +2,7 @@ const API_BASE = import.meta?.env?.VITE_API_BASE || 'http://127.0.0.1:5000';
 
 /**
  * Envoie un FormData vers une route et retourne le blob (image) renvoyé.
- * Champs fournis dans `fields` seront ajoutés au FormData.
+ * Les champs fournis dans `fields` seront ajoutés au FormData.
  */
 async function postForm(route, fields = {}) {
   const url = `${API_BASE}${route}`;
@@ -28,14 +28,13 @@ async function postForm(route, fields = {}) {
 }
 
 export default {
-  // Convertit une image en noir et blanc.
-  // image_source : URL publique ou chemin côté serveur (string)
+  // Convertit une image en noir et blanc
   convertToBW: (image_source) => postForm('/api/convert-to-bw', { image_source }),
 
-  // Remove background (alpha PNG) via local 'rembg'
+  // Supprime l'arrière-plan (si utilisé)
   removeBackground: (image_source) => postForm('/api/remove-background', { image_source }),
 
-  // Rotation : angle en degrés (number ou string)
+  // Rotation : angle en degrés
   rotateImage: (image_source, angle) => postForm('/api/rotate-image', { image_source, angle }),
 
   // Flip : direction 'H' ou 'V'
@@ -44,17 +43,22 @@ export default {
   // Blur : percent (0-100)
   blurImage: (image_source, percent) => postForm('/api/blur-image', { image_source, percent }),
 
-  // Resize : x_percent et y_percent (nombres ou strings)
+  // Redimensionnement
   resizeImage: (image_source, x_percent, y_percent) =>
     postForm('/api/resize-image', { image_source, x_percent, y_percent }),
 
-  // Crop : crop_top, crop_bottom, crop_left, crop_right (nombres ou strings)
+  // Contraste : percent (100 = original)
+  contrastImage: (image_source, percent) => postForm('/api/contrast-image', { image_source, percent }),
+
+  // Luminosité : percent (100 = original)
+  brightnessImage: (image_source, percent) => postForm('/api/brightness-image', { image_source, percent }),
+
+  // Rognage
   cropImage: (image_source, crop_top, crop_bottom, crop_left, crop_right) =>
     postForm('/api/crop-image', { image_source, crop_top, crop_bottom, crop_left, crop_right }),
 
   // Modify : prompt (string)
   modifyImage: (image_source, prompt) => postForm('/api/modify-image', { image_source, prompt }),
 
-  // Expose utile pour appels génériques/tests
   postForm,
 };
