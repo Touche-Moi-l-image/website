@@ -97,22 +97,31 @@ const CropOverlay = ({ imageSrc, width, height, onConfirm, onCancel }) => {
                     left: '50%',
                     transform: 'translateX(-50%)',
                     display: 'flex',
+                    alignItems: 'center',
                     gap: '10px',
                     zIndex: 100,
-                    background: 'rgba(0,0,0,0.6)',
-                    padding: '10px 20px',
-                    borderRadius: '20px',
-                    backdropFilter: 'blur(4px)'
+                    background: 'rgba(0,0,0,0.8)',
+                    padding: '8px 16px',
+                    borderRadius: '9999px',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.1)'
                 }}>
                 {!selection ? (
-                    <span style={{ color: 'white', fontWeight: 'bold' }}>Glissez pour sélectionner</span>
+                    <span className="text-white font-medium text-sm whitespace-nowrap">Glissez pour sélectionner</span>
                 ) : (
                     <>
-                        <button onClick={handleConfirm} disabled={selection.w < 10} style={{ padding: '5px 15px', borderRadius: '4px', border: 'none', background: '#4CAF50', color: 'white', cursor: 'pointer' }}>
-                            ✅ Valider
+                        <button
+                            onClick={handleConfirm}
+                            disabled={selection.w < 10}
+                            className="bg-green-500 hover:bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors shadow-lg"
+                        >
+                            ✓
                         </button>
-                        <button onClick={onCancel} className="cancel-btn" style={{ padding: '5px 15px', borderRadius: '4px', border: 'none', background: '#f44336', color: 'white', cursor: 'pointer' }}>
-                            ❌ Annuler
+                        <button
+                            onClick={onCancel}
+                            className="bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center transition-colors shadow-lg"
+                        >
+                            ✕
                         </button>
                     </>
                 )}
