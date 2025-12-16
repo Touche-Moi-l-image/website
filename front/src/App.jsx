@@ -26,9 +26,9 @@ function App() {
   const [contrastVal, setContrastVal] = useState(0);
   const [rotationVal, setRotationVal] = useState(0);
 
-  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & TIMERS ---
+  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & PIPELINE (FRONTEND ONLY) ---
+  // baseImageRef : contient l'image "PROPRE" (après upload, crop, flip, BW, ou fusion dessin).
   const baseImageRef = useRef(null);
-  const activeSliderRef = useRef(null);
 
   // Refs pour les timers de saisie automatique (debounce)
   const brightnessTimeoutRef = useRef(null);
@@ -68,55 +68,64 @@ function App() {
     }
   }, [state.currentPicture]);
 
-  // Gestionnaire intelligent pour les sliders
-  const handleSliderChange = async (sliderName, apiCall) => {
-    if (!state.currentPicture) return;
-    setLoadingButton(sliderName);
+  // --- Pipeline Unifié (Frontend Chain) ---
+
+  const applyFilters = async (
+    overrideBrightness = brightnessVal,
+    overrideContrast = contrastVal,
+    overrideRotation = rotationVal
+  ) => {
+    if (!baseImageRef.current) return;
+    setLoadingButton('filters');
 
     try {
-      if (activeSliderRef.current !== sliderName) {
-        if (activeSliderRef.current !== null) {
-          baseImageRef.current = state.currentPicture;
-        } else {
-          baseImageRef.current = state.currentPicture;
-        }
-        activeSliderRef.current = sliderName;
+      // 1. On part de l'image de base
+      let resultImage = baseImageRef.current;
+
+      // 2. Application séquentielle des filtres (simule un pipeline backend)
+
+      // Luminosité
+      if (overrideBrightness !== 0) {
+        resultImage = await api.brightnessImage(resultImage, overrideBrightness + 100);
       }
 
-      const newImage = await apiCall(baseImageRef.current);
+      // Contraste
+      if (overrideContrast !== 0) {
+        resultImage = await api.contrastImage(resultImage, overrideContrast + 100);
+      }
 
-      actions.setCurrentPicture(newImage);
+      // Rotation
+      if (overrideRotation !== 0) {
+        resultImage = await api.rotateImage(resultImage, overrideRotation);
+      }
+
+      actions.setCurrentPicture(resultImage);
       if (canvasRef.current?.reloadImage) {
-        canvasRef.current.reloadImage(newImage);
+        canvasRef.current.reloadImage(resultImage);
       }
-
     } catch (err) {
-      console.error(`Erreur ${sliderName}:`, err);
+      console.error("Erreur pipeline frontend:", err);
     } finally {
       setLoadingButton(null);
     }
   };
 
-  // --- Handlers des Sliders (valeurs absolues appliquées à la base) ---
+  // --- Handlers des Sliders ---
 
-  // Note: On accepte un argument optionnel 'val' pour les appels depuis les timers/inputs
-  const applyBrightness = (val = brightnessVal) => {
-    handleSliderChange('brightness', (src) =>
-      api.brightnessImage(src, val + 100)
-    );
+  const handleBrightnessChange = (val) => {
+    setBrightnessVal(val);
   };
 
-  const applyContrast = (val = contrastVal) => {
-    handleSliderChange('contrast', (src) =>
-      api.contrastImage(src, val + 100)
-    );
-  };
+  const commitBrightness = (val) => applyFilters(val, contrastVal, rotationVal);
+  const commitContrast = (val) => applyFilters(brightnessVal, val, rotationVal);
+  const commitRotation = (val) => applyFilters(brightnessVal, contrastVal, val);
 
-  const applyRotation = (val = rotationVal) => {
-    handleSliderChange('rotation', (src) =>
-      api.rotateImage(src, val)
-    );
-  };
+
+  // Ces fonctions sont maintenant des wrappers vers applyFilters
+  const applyBrightness = (val = brightnessVal) => commitBrightness(val);
+  const applyContrast = (val = contrastVal) => commitContrast(val);
+  const applyRotation = (val = rotationVal) => commitRotation(val);
+
 
   // --- Helpers pour la saisie numérique (Auto-validation) ---
 
@@ -149,33 +158,37 @@ function App() {
 
   // --- Handlers des Boutons ---
 
-  const commitAndApply = async (apiCall, key) => {
+  // --- Handlers des Boutons (Modifs Structurelles) ---
+
+  const handleHardEdit = async (apiCall, key) => {
     setLoadingButton(key);
     try {
-      const image = await apiCall(state.currentPicture);
-      actions.setCurrentPicture(image);
-      if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(image);
+      // 1. Appliquer la transformation "dure" sur l'image de base ACTUELLE
+      const newBase = await apiCall(baseImageRef.current);
 
-      baseImageRef.current = image;
-      activeSliderRef.current = null;
-      setBrightnessVal(0);
-      setContrastVal(0);
-      setRotationVal(0);
+      // 2. Mettre à jour l'image de base
+      baseImageRef.current = newBase;
+
+      // 3. Ré-appliquer les filtres (Lumi/Contrast/Rot) par dessus cette nouvelle base via le pipeline
+      await applyFilters(brightnessVal, contrastVal, rotationVal);
+
     } catch (err) {
       console.error(err);
-    } finally {
       setLoadingButton(null);
     }
   };
 
-  const handleConvertToBW = () => commitAndApply((src) => api.convertToBW(src), 'bw');
-  const handleFlip = (direction) => commitAndApply((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
+  const handleConvertToBW = () => handleHardEdit((src) => api.convertToBW(src), 'bw');
+  const handleFlip = (direction) => handleHardEdit((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
 
   const handleApplyDrawing = () => {
     if (canvasRef.current) {
       const mergedImage = canvasRef.current.getImageData();
       actions.setCurrentPicture(mergedImage);
       baseImageRef.current = mergedImage;
+      setBrightnessVal(0);
+      setContrastVal(0);
+      setRotationVal(0);
       if (canvasRef.current.reloadImage) {
         canvasRef.current.reloadImage(mergedImage);
       }
@@ -202,7 +215,7 @@ function App() {
       setEditingStarted(false);
 
       baseImageRef.current = reader.result;
-      activeSliderRef.current = null;
+      // Reset sliders
       setBrightnessVal(0);
       setContrastVal(0);
       setRotationVal(0);
@@ -221,7 +234,6 @@ function App() {
     setBrightnessVal(0);
     setContrastVal(0);
     setRotationVal(0);
-    activeSliderRef.current = null;
   };
 
   const numberInputStyle = {
