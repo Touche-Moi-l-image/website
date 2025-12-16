@@ -27,6 +27,10 @@ app.register_blueprint(crop_image)
 app.register_blueprint(remove_background)
 app.register_blueprint(modify_image)
 
+@app.route('/')
+def index():
+    return "Server is running! 🚀"
+
 if __name__ == '__main__':
     dev_mode = os.getenv('DEV','') == '1'
     app.run(host='127.0.0.1', port=5000, debug=dev_mode)

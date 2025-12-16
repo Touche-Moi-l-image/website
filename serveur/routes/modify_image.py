@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify
 from routes.utils import process_image
 from PIL import Image
-import torch
-from diffusers import StableDiffusionInstructPix2PixPipeline, EulerAncestralDiscreteScheduler
 import os
 
 modify_image = Blueprint('modify_image', __name__)
@@ -13,6 +11,10 @@ def get_pipeline():
     global pipe
     if pipe is None:
         print("Loading Instruct-Pix2Pix model... (this may take a while on first run)")
+        # Lazy imports to speed up server start
+        import torch
+        from diffusers import StableDiffusionInstructPix2PixPipeline, EulerAncestralDiscreteScheduler
+
         model_id = "timbrooks/instruct-pix2pix"
         
         device = "cuda" if torch.cuda.is_available() else "cpu"
