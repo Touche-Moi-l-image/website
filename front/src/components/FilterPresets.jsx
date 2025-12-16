@@ -26,14 +26,6 @@ const PRESETS = [
         ]
     },
     {
-        id: 'bw-contrast',
-        name: 'N&B Intense',
-        ops: [
-            { type: 'bw' },
-            { type: 'contrast', value: 40 }
-        ]
-    },
-    {
         id: 'vintage',
         name: 'Vintage',
         ops: [
