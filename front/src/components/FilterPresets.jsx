@@ -1,9 +1,11 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const PRESETS = [
     {
         id: 'eclat',
         name: 'Éclat',
+        gradient: 'from-orange-400 to-yellow-300',
         ops: [
             { type: 'contrast', value: 30 },
             { type: 'brightness', value: 10 }
@@ -12,6 +14,7 @@ const PRESETS = [
     {
         id: 'sombre',
         name: 'Sombre',
+        gradient: 'from-gray-700 to-gray-900',
         ops: [
             { type: 'brightness', value: -30 },
             { type: 'contrast', value: 20 }
@@ -20,22 +23,16 @@ const PRESETS = [
     {
         id: 'douceur',
         name: 'Douceur',
+        gradient: 'from-pink-300 to-rose-300',
         ops: [
-            { type: 'blur', value: 2 }, // Blur value 0-100, 2 is subtle
+            { type: 'blur', value: 2 },
             { type: 'brightness', value: 10 }
-        ]
-    },
-    {
-        id: 'bw-contrast',
-        name: 'N&B Intense',
-        ops: [
-            { type: 'bw' },
-            { type: 'contrast', value: 40 }
         ]
     },
     {
         id: 'vintage',
         name: 'Vintage',
+        gradient: 'from-amber-700 to-orange-900',
         ops: [
             { type: 'contrast', value: -20 },
             { type: 'brightness', value: 20 }
@@ -45,56 +42,22 @@ const PRESETS = [
 
 const FilterPresets = ({ onApplyPreset, disabled }) => {
     return (
-        <div className="filter-presets">
-            <h3>Filtres & Presets</h3>
-            <div className="presets-grid">
-                {PRESETS.map((preset) => (
-                    <button
-                        key={preset.id}
-                        className="preset-btn"
-                        onClick={() => onApplyPreset(preset)}
-                        disabled={disabled}
-                    >
+        <div className="grid grid-cols-2 gap-3">
+            {PRESETS.map((preset) => (
+                <motion.button
+                    key={preset.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`relative overflow-hidden p-4 rounded-xl text-left shadow-lg group bg-gradient-to-br ${preset.gradient} opacity-90 hover:opacity-100 transition-opacity`}
+                    onClick={() => onApplyPreset(preset)}
+                    disabled={disabled}
+                >
+                    <span className="relative z-10 text-white font-bold text-shadow-sm uppercase tracking-wider text-xs">
                         {preset.name}
-                    </button>
-                ))}
-            </div>
-            <style>{`
-        .filter-presets {
-          margin: 1rem 0;
-          text-align: left;
-        }
-        .filter-presets h3 {
-          font-size: 0.9rem;
-          margin-bottom: 0.5rem;
-          color: #bbb;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-        }
-        .presets-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-          gap: 0.5rem;
-        }
-        .preset-btn {
-          background: #444;
-          border: 1px solid #555;
-          color: white;
-          padding: 0.5rem;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 0.8rem;
-          transition: all 0.2s;
-        }
-        .preset-btn:hover:not(:disabled) {
-          background: #555;
-          border-color: #777;
-        }
-        .preset-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      `}</style>
+                    </span>
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                </motion.button>
+            ))}
         </div>
     );
 };

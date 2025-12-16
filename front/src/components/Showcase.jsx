@@ -1,4 +1,7 @@
 import React from 'react';
+import BentoCard from './ui/BentoCard';
+import ActionButton from './ui/ActionButton';
+import { faRocket } from '@fortawesome/free-solid-svg-icons';
 
 // Import images
 import imgBlur from '../../../src/img/blured_image.png';
@@ -24,32 +27,66 @@ const features = [
 
 function Showcase({ onStartEditing }) {
     return (
-        <div className="showcase-container">
-            <div className="app-header">
-                <img src={logo} alt="Logo" className="header-logo" />
-                <h1>Touche Moi l'Image</h1>
+        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col items-center">
+
+            {/* Header */}
+            <div className="flex flex-col items-center gap-4 mb-16 text-center">
+                <div className="w-20 h-20 bg-brand-yellow rounded-2xl flex items-center justify-center shadow-[0_0_40px_rgba(255,205,60,0.3)] animate-float">
+                    <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
+                </div>
+                <div>
+                    <h1 className="text-5xl font-bold mb-3 tracking-tight">Touche Moi l'Image</h1>
+                    <p className="text-xl text-gray-400 font-light">
+                        La retouche photo <span className="text-brand-yellow font-medium">réinventée</span> et amusante.
+                    </p>
+                </div>
+
+                <ActionButton
+                    variant="primary"
+                    icon={faRocket}
+                    className="mt-6 !px-8 !py-4 text-lg"
+                    onClick={onStartEditing}
+                >
+                    Commencer à créer
+                </ActionButton>
             </div>
 
-            <div className="showcase-header">
-                <h2>Tout ce que vous pouvez faire</h2>
-                <p className="showcase-subtitle">Découvrez nos outils de retouche puissants et simples à utiliser.</p>
-            </div>
-
-            <div className="showcase-grid">
-                {features.map((feature) => (
-                    <div key={feature.id} className="showcase-card">
-                        <div className="card-image-wrapper">
-                            <img src={feature.img} alt={feature.title} />
+            {/* Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                {features.map((feature, index) => (
+                    <BentoCard
+                        key={feature.id}
+                        delay={index * 0.1}
+                        className="group relative overflow-hidden min-h-[280px] flex flex-col justify-end"
+                    >
+                        <div className="absolute inset-0 z-0">
+                            <img
+                                src={feature.img}
+                                alt={feature.title}
+                                className="w-full h-full object-cover opacity-60 group-hover:opacity-80 group-hover:scale-110 transition-all duration-700"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
                         </div>
-                        <h3>{feature.title}</h3>
-                        <p>{feature.desc}</p>
-                    </div>
+
+                        <div className="relative z-10 p-2">
+                            <h3 className="text-2xl font-bold text-brand-yellow mb-2">{feature.title}</h3>
+                            <p className="text-sm text-gray-300 leading-relaxed opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                                {feature.desc}
+                            </p>
+                        </div>
+                    </BentoCard>
                 ))}
             </div>
 
-            <div className="showcase-footer">
-                <button className="cta-btn large" onClick={onStartEditing}>C'est parti !</button>
-            </div>
+            <style jsx>{`
+                @keyframes float {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+                .animate-float {
+                    animation: float 6s ease-in-out infinite;
+                }
+            `}</style>
         </div>
     );
 }
