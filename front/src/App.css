@@ -27,3 +27,17 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-brand-yellow;
 }
+
+@theme {
+  --animate-shine: shine 1s;
+
+  @keyframes shine {
+    0% {
+      transform: translateX(-150%) skewX(-20deg);
+    }
+
+    100% {
+      transform: translateX(150%) skewX(-20deg);
+    }
+  }
+}
