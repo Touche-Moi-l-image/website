@@ -6,6 +6,7 @@ import Showcase from './components/Showcase.jsx';
 import AboutModal from './components/AboutModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import FilterPresets from './components/FilterPresets.jsx';
+import CropOverlay from './components/CropOverlay.jsx';
 import { useState, useRef, useEffect } from 'react';
 import api from './services/apiService.js';
 
@@ -18,6 +19,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const [editingStarted, setEditingStarted] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
   const [loadingButton, setLoadingButton] = useState(null);
   const canvasRef = useRef(null);
   const [imageSize, setImageSize] = useState({ width: 800, height: 600 });
@@ -172,6 +174,72 @@ function App() {
   const handleConvertToBW = () => commitAndApply((src) => api.convertToBW(src), 'bw');
   const handleFlip = (direction) => commitAndApply((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
 
+  const handleRemoveBackground = () => commitAndApply((src) => api.removeBackground(src), 'removebg');
+
+  const handleResize = () => {
+    setIsCropping(true);
+  };
+
+  const onConfirmCrop = (selection) => {
+    if (!baseImageRef.current || !selection) return;
+
+    // Calculer les ratios pour l'image réelle (natural dimensions)
+    const displayW = imageSize.width;
+    const displayH = imageSize.height;
+
+    const img = new Image();
+    img.src = baseImageRef.current;
+
+    // Attendre que l'image soit chargée pour avoir les dimensions naturelles (si pas déjà là)
+    // Mais ici baseImageRef est une dataURL, donc synchrone ? Non.
+    // On assume img.naturalWidth disponible après onload. 
+    // Plus simple : on utilise des ratios basés sur displayW/H si on assume que l'image affichée EST baseImageRef
+
+    // Problème : drawingCanvas affiche state.currentPicture (modifié)
+    // CropOverlay affiche aussi state.currentPicture
+
+    // On veut cropper SUR le résultat actuel.
+
+    const scaleX = img.naturalWidth / displayW; // Wait, we can't get naturalWidth synchronously without an Image object helper.
+    // Hack: reload image object or use HTMLImageElement if valid.
+
+    // Meilleure approche: passer l'image source à CropOverlay et on assume App connaît la "natural size" ?
+    // On a calculé imageSize dans le useEffect, mais on n'a pas gardé originalSize en state, juste local.
+
+    // On va charger l'image pour avoir les dimensions réelles
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      const realW = tempImg.naturalWidth;
+      const realH = tempImg.naturalHeight;
+
+      const scaleX = realW / displayW;
+      const scaleY = realH / displayH;
+
+      const realCrop = {
+        left: Math.round(selection.x * scaleX),
+        top: Math.round(selection.y * scaleY),
+        width: Math.round(selection.w * scaleX),
+        height: Math.round(selection.h * scaleY)
+      };
+
+      // API attend: crop_top, crop_bottom, crop_left, crop_right (pixels à enlever ?)
+      // Check crop_image.py: "Supports direct file upload... do_crop(image) ... left=left_px, right=... orig_w - right_px"
+      // Le code serveur: 
+      // left = crop_left_val
+      // right = orig_w - crop_right_val
+      // Donc crop_right est la marge droite (pixels à enlever à droite), pas la coordonnée X de droite.
+
+      const cropTop = realCrop.top;
+      const cropLeft = realCrop.left;
+      const cropBottom = realH - (realCrop.top + realCrop.height);
+      const cropRight = realW - (realCrop.left + realCrop.width);
+
+      commitAndApply((src) => api.cropImage(src, cropTop, cropBottom, cropLeft, cropRight), 'crop');
+      setIsCropping(false);
+    };
+    tempImg.src = state.currentPicture;
+  };
+
   const handleApplyPreset = (preset) => {
     commitAndApply(async (initialSrc) => {
       let currentSrc = initialSrc;
@@ -305,12 +373,22 @@ function App() {
             {state.currentPicture && editingStarted && (
               <>
                 <div className="preview">
-                  <DrawingCanvas
-                    ref={canvasRef}
-                    imageUrl={state.currentPicture}
-                    width={imageSize.width}
-                    height={imageSize.height}
-                  />
+                  {isCropping ? (
+                    <CropOverlay
+                      imageSrc={state.currentPicture}
+                      width={imageSize.width}
+                      height={imageSize.height}
+                      onConfirm={onConfirmCrop}
+                      onCancel={() => setIsCropping(false)}
+                    />
+                  ) : (
+                    <DrawingCanvas
+                      ref={canvasRef}
+                      imageUrl={state.currentPicture}
+                      width={imageSize.width}
+                      height={imageSize.height}
+                    />
+                  )}
                   {loadingButton && <div className="loader-overlay">Traitement...</div>}
                 </div>
 
@@ -325,6 +403,12 @@ function App() {
                     </button>
                     <button className="flip-v-btn" onClick={() => handleFlip('V')} disabled={loadingButton !== null}>
                       Flip V
+                    </button>
+                    <button className="remove-bg-btn" onClick={handleRemoveBackground} disabled={loadingButton !== null} style={{ fontSize: '0.7rem' }}>
+                      No BG
+                    </button>
+                    <button className="resize-btn" onClick={() => setIsCropping(true)} disabled={loadingButton !== null} style={{ fontSize: '0.7rem' }}>
+                      Crop
                     </button>
                   </div>
 
