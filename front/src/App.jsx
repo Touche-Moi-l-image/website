@@ -5,6 +5,7 @@ import DrawingCanvas from './components/DrawingCanvas.jsx';
 import Showcase from './components/Showcase.jsx';
 import AboutModal from './components/AboutModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
+import FilterPresets from './components/FilterPresets.jsx';
 import { useState, useRef, useEffect } from 'react';
 import api from './services/apiService.js';
 
@@ -171,6 +172,24 @@ function App() {
   const handleConvertToBW = () => commitAndApply((src) => api.convertToBW(src), 'bw');
   const handleFlip = (direction) => commitAndApply((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
 
+  const handleApplyPreset = (preset) => {
+    commitAndApply(async (initialSrc) => {
+      let currentSrc = initialSrc;
+      for (const op of preset.ops) {
+        if (op.type === 'contrast') {
+          currentSrc = await api.contrastImage(currentSrc, op.value + 100);
+        } else if (op.type === 'brightness') {
+          currentSrc = await api.brightnessImage(currentSrc, op.value + 100);
+        } else if (op.type === 'blur') {
+          currentSrc = await api.blurImage(currentSrc, op.value);
+        } else if (op.type === 'bw') {
+          currentSrc = await api.convertToBW(currentSrc);
+        }
+      }
+      return currentSrc;
+    }, `preset-${preset.id}`);
+  };
+
   const handleApplyDrawing = () => {
     if (canvasRef.current) {
       const mergedImage = canvasRef.current.getImageData();
@@ -311,6 +330,13 @@ function App() {
 
                   <hr className="divider" />
 
+                  <FilterPresets
+                    onApplyPreset={handleApplyPreset}
+                    disabled={loadingButton !== null}
+                  />
+
+                  <hr className="divider" />
+
                   <div className="control-group sliders-column">
 
                     {/* Luminosité */}
@@ -415,12 +441,13 @@ function App() {
                   </button>
                 </div>
               </>
-            )}
+            )
+            }
 
-          </div>
+          </div >
         )}
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
 
