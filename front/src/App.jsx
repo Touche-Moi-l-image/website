@@ -6,6 +6,8 @@ import Showcase from './components/Showcase.jsx';
 import AboutModal from './components/AboutModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import FilterPresets from './components/FilterPresets.jsx';
+import CropOverlay from './components/CropOverlay.jsx';
+import ResizeModal from './components/ResizeModal.jsx';
 import { useState, useRef, useEffect } from 'react';
 import api from './services/apiService.js';
 
@@ -18,20 +20,21 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   const [editingStarted, setEditingStarted] = useState(false);
+  const [isCropping, setIsCropping] = useState(false);
+  const [showResizeModal, setShowResizeModal] = useState(false);
   const [loadingButton, setLoadingButton] = useState(null);
   const canvasRef = useRef(null);
+
   const [imageSize, setImageSize] = useState({ width: 800, height: 600 });
+  const [realDimensions, setRealDimensions] = useState(null);
 
   // États pour les sliders (valeurs visuelles)
   const [brightnessVal, setBrightnessVal] = useState(0);
   const [contrastVal, setContrastVal] = useState(0);
   const [rotationVal, setRotationVal] = useState(0);
 
-  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & PIPELINE (FRONTEND ONLY) ---
-  // baseImageRef : contient l'image servant de base au pipeline (peut inclure les effets BAKED d'un preset)
+  // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & TIMERS ---
   const baseImageRef = useRef(null);
-  // committedImageRef : contient l'image "Stable" (après upload, flip, merge) SANS les effets baked des presets
-  const committedImageRef = useRef(null);
   const activeSliderRef = useRef(null);
 
   // Refs pour les timers de saisie automatique (debounce)
@@ -43,7 +46,6 @@ function App() {
   useEffect(() => {
     if (state.currentPicture && !baseImageRef.current) {
       baseImageRef.current = state.currentPicture;
-      committedImageRef.current = state.currentPicture;
     }
   }, [state.currentPicture]);
 
@@ -68,72 +70,61 @@ function App() {
         }
 
         setImageSize({ width, height });
+        setRealDimensions({ w: img.naturalWidth, h: img.naturalHeight });
       };
       img.src = state.currentPicture;
     }
   }, [state.currentPicture]);
 
-  // --- Pipeline Unifié (Frontend Chain) ---
-
-  const applyFilters = async (
-    overrideBrightness = brightnessVal,
-    overrideContrast = contrastVal,
-    overrideRotation = rotationVal
-  ) => {
-    if (!baseImageRef.current) return;
-    setLoadingButton('filters');
+  // Gestionnaire intelligent pour les sliders
+  const handleSliderChange = async (sliderName, apiCall) => {
+    if (!state.currentPicture) return;
+    setLoadingButton(sliderName);
 
     try {
-      // 1. On part de l'image de base
-      let resultImage = baseImageRef.current;
-
-      // 2. Application séquentielle des filtres (simule un pipeline backend)
-
-      // Luminosité
-      if (overrideBrightness !== 0) {
-        resultImage = await api.brightnessImage(resultImage, overrideBrightness + 100);
+      if (activeSliderRef.current !== sliderName) {
+        if (activeSliderRef.current !== null) {
+          baseImageRef.current = state.currentPicture;
+        } else {
+          baseImageRef.current = state.currentPicture;
+        }
+        activeSliderRef.current = sliderName;
       }
 
-      // Contraste
-      if (overrideContrast !== 0) {
-        resultImage = await api.contrastImage(resultImage, overrideContrast + 100);
-      }
+      const newImage = await apiCall(baseImageRef.current);
 
-      // Rotation
-      if (overrideRotation !== 0) {
-        resultImage = await api.rotateImage(resultImage, overrideRotation);
-      }
-
-      actions.setCurrentPicture(resultImage);
+      actions.setCurrentPicture(newImage);
       if (canvasRef.current?.reloadImage) {
-        canvasRef.current.reloadImage(resultImage);
+        canvasRef.current.reloadImage(newImage);
       }
+
     } catch (err) {
-      console.error("Erreur pipeline frontend:", err);
+      console.error(`Erreur ${sliderName}:`, err);
     } finally {
       setLoadingButton(null);
     }
   };
 
-  // --- Handlers des Sliders ---
-
-  const handleBrightnessChange = (val) => {
-    setBrightnessVal(val);
-  };
-
-  const commitBrightness = (val) => applyFilters(val, contrastVal, rotationVal);
-  const commitContrast = (val) => applyFilters(brightnessVal, val, rotationVal);
-  const commitRotation = (val) => applyFilters(brightnessVal, contrastVal, val);
-
-
-  // Ces fonctions sont maintenant des wrappers vers applyFilters
-  const applyBrightness = (val = brightnessVal) => commitBrightness(val);
-  const applyContrast = (val = contrastVal) => commitContrast(val);
-  const applyRotation = (val = rotationVal) => commitRotation(val);
   // --- Handlers des Sliders (valeurs absolues appliquées à la base) ---
 
   // Note: On accepte un argument optionnel 'val' pour les appels depuis les timers/inputs
+  const applyBrightness = (val = brightnessVal) => {
+    handleSliderChange('brightness', (src) =>
+      api.brightnessImage(src, val + 100)
+    );
+  };
 
+  const applyContrast = (val = contrastVal) => {
+    handleSliderChange('contrast', (src) =>
+      api.contrastImage(src, val + 100)
+    );
+  };
+
+  const applyRotation = (val = rotationVal) => {
+    handleSliderChange('rotation', (src) =>
+      api.rotateImage(src, val)
+    );
+  };
 
   // --- Helpers pour la saisie numérique (Auto-validation) ---
 
@@ -169,15 +160,11 @@ function App() {
   const commitAndApply = async (apiCall, key) => {
     setLoadingButton(key);
     try {
-      // 1. Appliquer sur la base STABLE (committed)
-      const image = await apiCall(committedImageRef.current || baseImageRef.current);
+      const image = await apiCall(state.currentPicture);
       actions.setCurrentPicture(image);
       if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(image);
 
-      // 2. Mettre à jour les refs
       baseImageRef.current = image;
-      committedImageRef.current = image; // On commit cette modification
-
       activeSliderRef.current = null;
       setBrightnessVal(0);
       setContrastVal(0);
@@ -192,60 +179,96 @@ function App() {
   const handleConvertToBW = () => commitAndApply((src) => api.convertToBW(src), 'bw');
   const handleFlip = (direction) => commitAndApply((src) => api.flipImage(src, direction), direction === 'H' ? 'flipH' : 'flipV');
 
-  const handleApplyPreset = async (preset) => {
-    setLoadingButton(`preset-${preset.id}`);
-    try {
-      // 1. Identifier les opérations "Slider" vs "Hard/Baked"
-      let newBrightness = 0;
-      let newContrast = 0;
-      let newRotation = 0;
+  const handleRemoveBackground = () => commitAndApply((src) => api.removeBackground(src), 'removebg');
 
-      const bakedOps = [];
+  const handleResize = () => {
+    setShowResizeModal(true);
+  };
 
+  const onConfirmResize = (wPct, hPct) => {
+    commitAndApply((src) => api.resizeImage(src, wPct, hPct), 'resize');
+  };
+
+  const handleCrop = () => {
+    setIsCropping(true);
+  };
+
+  const onConfirmCrop = (selection) => {
+    if (!baseImageRef.current || !selection) return;
+
+    // Calculer les ratios pour l'image réelle (natural dimensions)
+    const displayW = imageSize.width;
+    const displayH = imageSize.height;
+
+    const img = new Image();
+    img.src = baseImageRef.current;
+
+    // Attendre que l'image soit chargée pour avoir les dimensions naturelles (si pas déjà là)
+    // Mais ici baseImageRef est une dataURL, donc synchrone ? Non.
+    // On assume img.naturalWidth disponible après onload. 
+    // Plus simple : on utilise des ratios basés sur displayW/H si on assume que l'image affichée EST baseImageRef
+
+    // Problème : drawingCanvas affiche state.currentPicture (modifié)
+    // CropOverlay affiche aussi state.currentPicture
+
+    // On veut cropper SUR le résultat actuel.
+
+    const scaleX = img.naturalWidth / displayW; // Wait, we can't get naturalWidth synchronously without an Image object helper.
+    // Hack: reload image object or use HTMLImageElement if valid.
+
+    // Meilleure approche: passer l'image source à CropOverlay et on assume App connaît la "natural size" ?
+    // On a calculé imageSize dans le useEffect, mais on n'a pas gardé originalSize en state, juste local.
+
+    // On va charger l'image pour avoir les dimensions réelles
+    const tempImg = new Image();
+    tempImg.onload = () => {
+      const realW = tempImg.naturalWidth;
+      const realH = tempImg.naturalHeight;
+
+      const scaleX = realW / displayW;
+      const scaleY = realH / displayH;
+
+      const realCrop = {
+        left: Math.round(selection.x * scaleX),
+        top: Math.round(selection.y * scaleY),
+        width: Math.round(selection.w * scaleX),
+        height: Math.round(selection.h * scaleY)
+      };
+
+      // API attend: crop_top, crop_bottom, crop_left, crop_right (pixels à enlever ?)
+      // Check crop_image.py: "Supports direct file upload... do_crop(image) ... left=left_px, right=... orig_w - right_px"
+      // Le code serveur: 
+      // left = crop_left_val
+      // right = orig_w - crop_right_val
+      // Donc crop_right est la marge droite (pixels à enlever à droite), pas la coordonnée X de droite.
+
+      const cropTop = realCrop.top;
+      const cropLeft = realCrop.left;
+      const cropBottom = realH - (realCrop.top + realCrop.height);
+      const cropRight = realW - (realCrop.left + realCrop.width);
+
+      commitAndApply((src) => api.cropImage(src, cropTop, cropBottom, cropLeft, cropRight), 'crop');
+      setIsCropping(false);
+    };
+    tempImg.src = state.currentPicture;
+  };
+
+  const handleApplyPreset = (preset) => {
+    commitAndApply(async (initialSrc) => {
+      let currentSrc = initialSrc;
       for (const op of preset.ops) {
-        if (op.type === 'brightness') {
-          newBrightness = op.value;
-        } else if (op.type === 'contrast') {
-          newContrast = op.value;
-        } else if (op.type === 'rotation') {
-          newRotation = op.value;
-        } else {
-          // Opérations qui modifient forcément les pixels de base (Blur, BW...)
-          bakedOps.push(op);
-        }
-      }
-
-      // 2. Appliquer les opérations "Baked" sur l'image de base STABLE (Committed)
-      // Cela évite l'accumulation si on clique sur plusieurs presets à la suite
-
-      let currentBase = committedImageRef.current;
-      if (!currentBase) currentBase = baseImageRef.current;
-
-      for (const op of bakedOps) {
-        if (op.type === 'blur') {
-          currentBase = await api.blurImage(currentBase, op.value);
+        if (op.type === 'contrast') {
+          currentSrc = await api.contrastImage(currentSrc, op.value + 100);
+        } else if (op.type === 'brightness') {
+          currentSrc = await api.brightnessImage(currentSrc, op.value + 100);
+        } else if (op.type === 'blur') {
+          currentSrc = await api.blurImage(currentSrc, op.value);
         } else if (op.type === 'bw') {
-          currentBase = await api.convertToBW(currentBase);
+          currentSrc = await api.convertToBW(currentSrc);
         }
-        // Ajouter d'autres cas si nécessaire
       }
-
-      // 3. Mettre à jour la référence de base du pipeline (mais PAS committedImageRef)
-      baseImageRef.current = currentBase;
-
-      // 4. Mettre à jour les sliders (UI)
-      setBrightnessVal(newBrightness);
-      setContrastVal(newContrast);
-      setRotationVal(newRotation);
-
-      // 5. Appliquer le pipeline visuel (Sliders) sur la nouvelle base
-      await applyFilters(newBrightness, newContrast, newRotation);
-
-    } catch (err) {
-      console.error("Erreur preset:", err);
-    } finally {
-      setLoadingButton(null);
-    }
+      return currentSrc;
+    }, `preset-${preset.id}`);
   };
 
   const handleApplyDrawing = () => {
@@ -253,7 +276,6 @@ function App() {
       const mergedImage = canvasRef.current.getImageData();
       actions.setCurrentPicture(mergedImage);
       baseImageRef.current = mergedImage;
-      committedImageRef.current = mergedImage; // On commit le dessin
       if (canvasRef.current.reloadImage) {
         canvasRef.current.reloadImage(mergedImage);
       }
@@ -280,7 +302,6 @@ function App() {
       setEditingStarted(false);
 
       baseImageRef.current = reader.result;
-      committedImageRef.current = reader.result;
       activeSliderRef.current = null;
       setBrightnessVal(0);
       setContrastVal(0);
@@ -293,7 +314,6 @@ function App() {
     if (state.originalPicture) {
       actions.setCurrentPicture(state.originalPicture);
       baseImageRef.current = state.originalPicture;
-      committedImageRef.current = state.originalPicture;
     }
     if (canvasRef.current?.reloadImage) canvasRef.current.reloadImage(state.originalPicture);
     setEditingStarted(false);
@@ -319,6 +339,7 @@ function App() {
     <div className="layout">
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showResizeModal && <ResizeModal onClose={() => setShowResizeModal(false)} onConfirm={onConfirmResize} />}
       <Sidebar
         activeTab={activeTab}
         onNavigate={setActiveTab}
@@ -366,14 +387,29 @@ function App() {
             {state.currentPicture && editingStarted && (
               <>
                 <div className="preview">
-                  <DrawingCanvas
-                    ref={canvasRef}
-                    imageUrl={state.currentPicture}
-                    width={imageSize.width}
-                    height={imageSize.height}
-                  />
+                  {isCropping ? (
+                    <CropOverlay
+                      imageSrc={state.currentPicture}
+                      width={imageSize.width}
+                      height={imageSize.height}
+                      onConfirm={onConfirmCrop}
+                      onCancel={() => setIsCropping(false)}
+                    />
+                  ) : (
+                    <DrawingCanvas
+                      ref={canvasRef}
+                      imageUrl={state.currentPicture}
+                      width={imageSize.width}
+                      height={imageSize.height}
+                    />
+                  )}
                   {loadingButton && <div className="loader-overlay">Traitement...</div>}
                 </div>
+                {realDimensions && (
+                  <div style={{ textAlign: 'center', marginTop: '-10px', marginBottom: '10px', color: '#888', fontSize: '0.9rem' }}>
+                    Dimensions: <strong>{realDimensions.w} x {realDimensions.h} px</strong>
+                  </div>
+                )}
 
                 <div className="editor-controls">
 
@@ -386,6 +422,15 @@ function App() {
                     </button>
                     <button className="flip-v-btn" onClick={() => handleFlip('V')} disabled={loadingButton !== null}>
                       Flip V
+                    </button>
+                    <button className="remove-bg-btn" onClick={handleRemoveBackground} disabled={loadingButton !== null} style={{ fontSize: '0.7rem' }}>
+                      No BG
+                    </button>
+                    <button className="resize-btn" onClick={handleResize} disabled={loadingButton !== null} style={{ fontSize: '0.7rem' }}>
+                      Resize
+                    </button>
+                    <button className="crop-btn" onClick={handleCrop} disabled={loadingButton !== null} style={{ fontSize: '0.7rem', backgroundColor: '#e91e63', color: 'white' }}>
+                      Crop
                     </button>
                   </div>
 
