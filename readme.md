@@ -99,7 +99,7 @@ curl -X POST -F "image_source=C:/path/to/local/image.jpg" http://127.0.0.1:5000/
 **Exemple d'appel :**
 
 ```bash
-curl -X POST -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" -F "x_percent=50" -F "y_percent=120" http://127.0.0.1:5000/api/resize-image --output resized_image.png 
+curl -X POST -F "image_source=C:/Users/quent/Desktop/github/website/src/img/base.png" -F "x_percent=50" -F "y_percent=120" http://127.0.0.1:5000/api/resize-image --output resized_image.png
 ```
 
 **Exemple d'image après transformation :**
@@ -177,4 +177,25 @@ curl -X POST \
 
 **Exemple d'image après transformation :**
 
-![Image rognée](src/img/croped-image.png)
+![Image rognée](src/img/croped_image.png)
+
+---
+
+### 9. Modification par IA
+**Route :** `/api/modify-image`
+
+- **Méthode :** POST
+- **Description :** Modifie ou transforme une image en suivant une instruction textuelle (prompt), grâce à une IA générative locale (Instruct-Pix2Pix).
+- **Paramètres :**
+  - `image_source` : URL ou chemin local de l'image à transformer.
+  - `prompt` : Instruction textuelle en anglais (ex: "turn into anime", "add fire").
+
+**Exemple d'appel :**
+
+```bash
+curl -X POST -F "image_source=src/img/base.png" -F "prompt=make it cyber punk" http://127.0.0.1:5000/api/modify-image --output modified_image.png
+```
+
+**Exemple d'image après transformation :**
+
+![Image modifiée par IA](src/img/image_ia.png)

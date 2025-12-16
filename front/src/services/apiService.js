@@ -57,6 +57,8 @@ export default {
   cropImage: (image_source, crop_top, crop_bottom, crop_left, crop_right) =>
     postForm('/api/crop-image', { image_source, crop_top, crop_bottom, crop_left, crop_right }),
 
-  // Fonction générique exposée pour tests
+  // Modify : prompt (string)
+  modifyImage: (image_source, prompt) => postForm('/api/modify-image', { image_source, prompt }),
+
   postForm,
 };

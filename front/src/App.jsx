@@ -45,6 +45,9 @@ function App() {
   const [canRedo, setCanRedo] = useState(false);
   const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'];
 
+  // AI Modification State
+  const [modifyPrompt, setModifyPrompt] = useState('');
+
   // --- NOUVELLE LOGIQUE : IMAGE DE RÉFÉRENCE & TIMERS ---
   const baseImageRef = useRef(null);
   const activeSliderRef = useRef(null);
@@ -263,6 +266,15 @@ function App() {
       setIsCropping(false);
     };
     tempImg.src = state.currentPicture;
+  };
+
+  const handleModifyImage = async () => {
+    if (!modifyPrompt.trim()) return;
+
+    // On ferme le crop si ouvert pour éviter les conflits visuels
+    if (isCropping) setIsCropping(false);
+
+    commitAndApply((src) => api.modifyImage(src, modifyPrompt), 'modify');
   };
 
   const handleApplyPreset = async (preset) => {
@@ -485,7 +497,7 @@ function App() {
             */}
 
             {editingStarted && (
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full overflow-hidden">
+              <div className="grid grid-cols-1 lg:grid-cols-4 lg:grid-rows-1 gap-6 flex-1 min-h-0 overflow-hidden">
                 {/* MAIN CANVAS AREA - Spans 3 cols */}
                 <div className="lg:col-span-3 flex flex-col gap-4 h-full min-h-0">
                   <BentoCard className="flex-1 flex items-center justify-center relative overflow-hidden group">
@@ -580,6 +592,27 @@ function App() {
                         Crop
                       </ActionButton>
                     </div>
+
+                    {/* AI MODIFICATION INPUT */}
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-white/10 w-full">
+                      <input
+                        type="text"
+                        placeholder="Décrivez les modifications (ex: 'Make it a painting')..."
+                        value={modifyPrompt}
+                        onChange={(e) => setModifyPrompt(e.target.value)}
+                        className="flex-1 bg-gray-900/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition-all"
+                        onKeyDown={(e) => e.key === 'Enter' && handleModifyImage()}
+                      />
+                      <ActionButton
+                        icon={faMagic}
+                        variant="primary"
+                        onClick={handleModifyImage}
+                        disabled={loadingButton !== null || !modifyPrompt.trim()}
+                        className="!py-2 !px-6"
+                      >
+                        Générer
+                      </ActionButton>
+                    </div>
                   </BentoCard>
                 </div>
 
@@ -587,7 +620,7 @@ function App() {
                 <div className="flex flex-col gap-6 h-full overflow-y-auto min-h-0 pr-2">
 
                   {/* DRAWING TOOLS */}
-                  <BentoCard title="Outils de Dessin" className="flex flex-col gap-4">
+                  <BentoCard title="Outils de Dessin" className="flex flex-col gap-4 max-h-[40vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
                     <div className="flex flex-col gap-4">
                       {/* Tools Toggles */}
                       <div className="flex gap-2 justify-center bg-gray-800/50 p-1 rounded-lg">
@@ -681,7 +714,7 @@ function App() {
                   </BentoCard>
 
                   {/* ADJUSTMENTS */}
-                  <BentoCard title="Ajustements" className="flex flex-col gap-6">
+                  <BentoCard title="Ajustements" className="flex flex-col gap-6 max-h-[30vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
 
                     {/* Brightness */}
                     <div className="space-y-2">
@@ -739,7 +772,7 @@ function App() {
                   </BentoCard>
 
                   {/* PRESETS */}
-                  <BentoCard title="Filtres" className="flex-1">
+                  <BentoCard title="Filtres" className="max-h-[30vh] shrink-0" contentClassName="overflow-y-auto pr-2 custom-scrollbar">
                     <FilterPresets
                       onApplyPreset={handleApplyPreset}
                       disabled={loadingButton !== null}
