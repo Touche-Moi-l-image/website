@@ -7,7 +7,7 @@ import AboutModal from './components/AboutModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import FilterPresets from './components/FilterPresets.jsx';
 import CropOverlay from './components/CropOverlay.jsx';
-import ResizeModal from './components/ResizeModal.jsx';
+import ResizeModal from './components/resizeModal.jsx';
 import BentoCard from './components/ui/BentoCard.jsx';
 import ActionButton from './components/ui/ActionButton.jsx';
 import { faMagic, faArrowsAltH, faArrowsAltV, faEraser, faExpand, faCropAlt, faSave, faPen, faUndo, faRedo, faTrash } from '@fortawesome/free-solid-svg-icons';
