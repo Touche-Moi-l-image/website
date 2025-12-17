@@ -57,6 +57,20 @@ function App() {
   const contrastTimeoutRef = useRef(null);
   const rotationTimeoutRef = useRef(null);
 
+  // Theme State
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Expert Mode State (AI Features)
+  const [isExpertMode, setIsExpertMode] = useState(false);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   // Initialisation de l'image de référence quand on charge une nouvelle image
   useEffect(() => {
     if (state.currentPicture && !baseImageRef.current) {
@@ -218,7 +232,7 @@ function App() {
     const img = new Image();
     img.src = baseImageRef.current;
 
-    // Attendre que l'image soit chargée pour avoir les dimensions naturelles (si pas déjà là)
+    // Attendre que l'image soit chargée pour avoir les dimensions réelles (si pas déjà là)
     // Mais ici baseImageRef est une dataURL, donc synchrone ? Non.
     // On assume img.naturalWidth disponible après onload. 
     // Plus simple : on utilise des ratios basés sur displayW/H si on assume que l'image affichée EST baseImageRef
@@ -429,7 +443,15 @@ function App() {
   return (
     <div className="flex h-screen w-screen bg-gray-950 text-white overflow-hidden">
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          isDarkMode={isDarkMode}
+          toggleTheme={() => setIsDarkMode(prev => !prev)}
+          isExpertMode={isExpertMode}
+          toggleExpertMode={() => setIsExpertMode(prev => !prev)}
+        />
+      )}
       {showResizeModal && <ResizeModal onClose={() => setShowResizeModal(false)} onConfirm={onConfirmResize} />}
       <Sidebar
         activeTab={activeTab}
@@ -593,26 +615,28 @@ function App() {
                       </ActionButton>
                     </div>
 
-                    {/* AI MODIFICATION INPUT */}
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-white/10 w-full">
-                      <input
-                        type="text"
-                        placeholder="Décrivez les modifications (ex: 'Make it a painting')..."
-                        value={modifyPrompt}
-                        onChange={(e) => setModifyPrompt(e.target.value)}
-                        className="flex-1 bg-gray-900/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition-all"
-                        onKeyDown={(e) => e.key === 'Enter' && handleModifyImage()}
-                      />
-                      <ActionButton
-                        icon={faMagic}
-                        variant="primary"
-                        onClick={handleModifyImage}
-                        disabled={loadingButton !== null || !modifyPrompt.trim()}
-                        className="!py-2 !px-6"
-                      >
-                        Générer
-                      </ActionButton>
-                    </div>
+                    {/* AI MODIFICATION INPUT - ONLY IN EXPERT MODE */}
+                    {isExpertMode && (
+                      <div className="flex gap-2 mt-4 pt-4 border-t border-white/10 w-full">
+                        <input
+                          type="text"
+                          placeholder="Décrivez les modifications (ex: 'Make it a painting')..."
+                          value={modifyPrompt}
+                          onChange={(e) => setModifyPrompt(e.target.value)}
+                          className="flex-1 bg-gray-900/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow transition-all"
+                          onKeyDown={(e) => e.key === 'Enter' && handleModifyImage()}
+                        />
+                        <ActionButton
+                          icon={faMagic}
+                          variant="primary"
+                          onClick={handleModifyImage}
+                          disabled={loadingButton !== null || !modifyPrompt.trim()}
+                          className="!py-2 !px-6"
+                        >
+                          Générer
+                        </ActionButton>
+                      </div>
+                    )}
                   </BentoCard>
                 </div>
 
